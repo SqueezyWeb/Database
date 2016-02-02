@@ -2,13 +2,13 @@
 /**
  * Query class file.
  *
- * @package SqueezyWeb\Database
+ * @package Freyja\Database
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 1.0.0
  */
 
-namespace SqueezyWeb\Database;
+namespace Freyja\Database;
 
 use SqueezyWeb\Exceptions\InvalidArgumentException as InvArgExcp;
 use \RuntimeException;
@@ -16,7 +16,7 @@ use \RuntimeException;
 /**
  * Query class.
  *
- * @package SqueezyWeb\Database
+ * @package Freyja\Database
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 1.0.0
  * @version 1.0.0
@@ -25,8 +25,7 @@ class Query {
   /**
    * Query type.
    *
-   * Accepted values: 'select', 'create', 'drop', 'update', 'insert',
-   * 'table_exists'.
+   * Accepted values: 'select', 'update', 'insert', 'table_exists', 'delete'.
    *
    * @since 1.0.0
    * @access private
@@ -115,6 +114,18 @@ class Query {
   private $insert = array();
 
   /**
+   * DELETE modifier.
+   *
+   * DELETE modifier can be one of the following: 'LOW_PRIORITY', 'QUICK' and
+   * 'IGNORE'.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var string
+   */
+  private $delete_modifier = '';
+
+  /**
    * Table joins.
    *
    * Array of arrays, each of which contains the table to join with, the field
@@ -132,20 +143,9 @@ class Query {
    *
    * @since 1.0.0
    * @access private
-   * @var array
+   * @var string
    */
-  private $where = array();
-
-  /**
-   * Where clauses (or).
-   *
-   * Where clauses concatenated by `OR`.
-   *
-   * @since 1.0.0
-   * @access private
-   * @var array
-   */
-  private $or_where = array();
+  private $where = '';
 
   /**
    * LIMIT.
@@ -177,7 +177,7 @@ class Query {
   public function table($name) {
     // Verify that $name is a string.
     if (!is_string($name))
-      throw InvArgExcp::typeMismatch('table name', $name, 'String');
+      throw InvArgExcp::typeMismatch('table name', $name, 'String or array');
 
     $this->table = $name;
     return $this;
@@ -235,6 +235,7 @@ class Query {
       $this->count = true;
     else
       $this->count = array_filter($fields, 'is_string');
+    $this->type = 'select';
 
     return $this;
   }
@@ -257,7 +258,39 @@ class Query {
   }
 
   /**
+   * Set a DELETE query.
+   *
+   * If clause is set through the method `Query::where()`, all rows of the table
+   * will be affected.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $modifier Optional. DELETE Modifier. Allowed keywords: '',
+   * 'LOW_PRIORITY', 'QUICK', 'IGNORE' (either uppercase or lowercase).
+   * Default: ''.
+   * @return self
+   *
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $modifier isn't a
+   * string.
+   * @throws \RuntimeException if $modifier isn't one of the allowed value.
+   */
+  public function delete($modifier = '') {
+    if (!is_string($modifier))
+      throw InvArgExcp::typeMismatch('delete modifier', $modifier, 'String');
+    if (!in_array($modifier, $accepted_keywords))
+      throw new RuntimeException('Modifier passed to `Query::delete()` isn\'t one of the allowed keywords');
+
+    $this->delete_modifier = $modifier;
+    $this->type = 'delete';
+  }
+
+  /**
    * JOIN tables.
+   *
+   * JOIN two tables. Second table of the JOIN will be the first argument of
+   * this method. The first one will be the one set with the `Query::table()`
+   * method.
    *
    * @since 1.0.0
    * @access public
@@ -275,14 +308,15 @@ class Query {
    * @throws \RuntimeException if $operator isn't a valid operator or if $type
    * isn't a valid join type.
    */
-  public function join($table, $one, $operator, $two, $type = 'inner') {
+  public function join($table, $one, $operator, $two, $type = 'INNER') {
     // Checks on arguments.
     foreach (array('table', 'one', 'operator', 'two', 'type') as $arg)
       if (!is_string($$arg))
         throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
-    if (!isOperatorValid($operator))
+    if (!self::isOperatorValid($operator, 'join'))
       throw new RuntimeException('Operator passed to `Query::join()` must be a valid operator');
-    if (!in_array($type, array('inner', 'left', 'right', 'full outer')))
+    $type = strtoupper($type);
+    if (!in_array($type, array('INNER', 'LEFT', 'RIGHT', 'FULL OUTER')))
       throw new RuntimeException('Join type passed to `Query::join()` must be a valid join type');
 
     $this->joins[] = array($table, $one, $operator, $two, $type);
@@ -307,7 +341,7 @@ class Query {
    */
   public function leftJoin($table, $one, $operator, $two) {
     try {
-      return $this->join($table, $one, $operator, $two, 'left');
+      return $this->join($table, $one, $operator, $two, 'LEFT');
     } catch (Exception $e) {
       throw $e;
     }
@@ -331,7 +365,7 @@ class Query {
    */
   public function rightJoin($table, $one, $operator, $two) {
     try {
-      return $this->join($table, $one, $operator, $two, 'right');
+      return $this->join($table, $one, $operator, $two, 'RIGHT');
     } catch (Exception $e) {
       throw $e;
     }
@@ -355,7 +389,7 @@ class Query {
    */
   public function fullOuterJoin($table, $one, $operator, $two) {
     try {
-      return $this->join($table, $one, $operator, $two, 'full outer');
+      return $this->join($table, $one, $operator, $two, 'FULL OUTER');
     } catch (Exception $e) {
       throw $e;
     }
@@ -398,15 +432,16 @@ class Query {
    *
    * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field and
    * $direction aren't strings.
-   * @throws \RuntimeException if $direction isn't 'asc' or 'desc';
+   * @throws \RuntimeException if $direction isn't 'ASC' or 'DESC';
    */
-  public function orderBy($field, $direction = 'asc') {
+  public function orderBy($field, $direction = 'ASC') {
     if (!is_string($field))
       throw InvArgExcp::typeMismatch('field name', $field, 'String');
     if (!is_string($direction))
       throw InvArgExcp::typeMismatch('direction', $direction, 'String');
-    if ($direction != 'asc' && $direction != 'desc')
-      throw new RuntimeException('$direction passed to `Query::orderBy()` must be \'asc\' or \'desc\'');
+    $direction = strtoupper($direction);
+    if ($direction != 'ASC' && $direction != 'DESC')
+      throw new RuntimeException('$direction passed to `Query::orderBy()` must be \'ASC\' or \'DESC\'');
 
     $this->order_by[$field] = $direction;
     return $this;
@@ -445,11 +480,35 @@ class Query {
    *
    * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field and
    * $operator aren't strings.
+   * @throws \RuntimeException if $operator isn't one of the allowed ones, or if
+   * $value isn't in the correct form.
    */
   public function having($field, $operator, $value) {
     foreach(array('field', 'operator') as $arg)
       if (!is_string($$arg))
         throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+
+    if (!self::isOperatorValid($operator))
+      throw new RuntimeException('Operator passed to `Query::having()` must be a valid one');
+
+    $operator = strtoupper($operator);
+    if (is_array($value) && $operator == 'BETWEEN') {
+      if (count($value) != 2)
+        throw new RuntimeException('Value passed to `Query::having()` isn\'t in the correct form');
+      try {
+        $value[0] = self::correctValue($value[0], 'having');
+        $value[1] = self::correctValue($value[1], 'having');
+      } catch (Exception $e) {
+        throw $e;
+      }
+      $value = $value[0].' AND '.$value[1];
+    } else {
+      try {
+        $value = self::correctValue($value, 'having');
+      } catch (Exception $e) {
+        throw $e;
+      }
+    }
 
     $this->having = array($field, $operator, $value);
     return $this;
@@ -499,7 +558,7 @@ class Query {
   }
 
   /**
-   * Set where clauses.
+   * Set WHERE clauses.
    *
    * Set where clauses, linking them with the `AND` operator.
    * Arguments can be passed in two forms. The simple one is useful for setting
@@ -527,7 +586,7 @@ class Query {
   }
 
   /**
-   * Set where clauses.
+   * Set WHERE clauses.
    *
    * Set where clauses, linking them with the `OR` operator.
    * The method behave like `Query::where()`.
@@ -550,61 +609,162 @@ class Query {
   }
 
   /**
+   * Set WHERE clauses.
    *
+   * Set clauses like: 'WHERE `field` IN (`value` AND `value` AND `value` ...)'.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @param array $values Values to check with.
+   * @return self
+   *
+   * @throws \RuntimeException if $value elements aren't in the correct form.
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * string.
    */
-  public function whereIn()
+  public function whereIn($field, array $values) {
+    try {
+      return $this->processWhereIn($field, $values, 'whereIn');
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
 
   /**
+   * Set WHERE clauses.
    *
+   * Set clauses like: 'WHERE `field` NOT IN (`value` AND `value` ...)'.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @param array $values Values to check with.
+   * @return self
+   *
+   * @throws \RuntimeException if $value elements aren't in the correct form.
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * string.
    */
-  public function whereNotIn()
+  public function whereNotIn($field, array $values) {
+    try {
+      return $this->processWhereIn($field, $values, 'whereNotIn');
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
 
   /**
-   * Process where clauses.
+   * Process WHERE clauses.
    *
    * @since 1.0.0
    * @access private
    *
    * @param array $args Arguments of the public method.
-   * @param string $called_by Name of the method that called this one.
+   * @param string $method Name of the method that called this one.
    * @return self
    *
    * @throws \RuntimeException if the arguments aren't in the correct form.
    */
-  private function processWhere(array $args, $called_by = 'where') {
+  private function processWhere(array $args, $method = 'where') {
     if (is_array($args[0])) {
       // Method was called with an array of clauses.
       foreach ($args[0] as $clause) {
         // Check if the array has other arrays or not, and if it has , then
         // check if every internal array has only scalar inside.
         if (!is_array($clause) || count($clause) < 2 || count($clause) > 3)
-          throw new RuntimeException('Arguments passed to `Query::'.$called_by.'()` aren\'t in the correct form');
+          throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+        $count = 0;
         foreach ($clause as $scalar) {
-          if (!is_scalar($scalar))
-            throw new RuntimeException('Arguments passed to `Query::'.$called_by.'()` aren\'t in the correct form');
+          if (!is_scalar($scalar) && (!is_array($scalar) || $count != 3))
+            throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+          $count++;
         }
       }
 
       // The array is in the correct form.
-      $this->buildWhereClause($args[0], $called_by == 'where' ? 'AND' : 'OR');
+      try {
+        $this->buildWhereClause($args[0], $method == 'where' ? 'AND' : 'OR');
+      } catch (Exception $e) {
+        throw $e;
+      }
     } elseif (is_scalar($args[0])) {
       // Method was called with a list of arguments.
       // Check if the arguments are all scalar, and if they are two or three.
       if (count($args) < 2 || count($args) > 3)
-        throw new RuntimeException('Arguments passed to `Query::'.$called_by.'()` aren\'t in the correct form');
+        throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+        $count = 0;
       foreach ($args as $clause) {
-        if (!is_scalar($clause))
-          throw new RuntimeException('Arguments passed to `Query::'.$called_by.'()` aren\'t in the correct form');
+        if (!is_scalar($clause) && (!is_array($clause) || $count != 3))
+          throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+        $count++;
       }
 
       // Arguments are in the correct form.
-      $this->buildWhereClause(array($args), $called_by == 'where' ? 'AND' : 'OR');
+      try {
+        $this->buildWhereClause(array($args), $method == 'where' ? 'AND' : 'OR');
+      } catch (Exception $e) {
+        throw $e;
+      }
     } else {
       // Method was called in an incorrect way.
-      throw new RuntimeException('Arguments passed to `Query::'.$called_by.'()` aren\'t in the correct form');
+      throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
     }
 
     return $this;
+  }
+
+  /**
+   * Process WHERE clauses.
+   *
+   * Process `WHERE ... IN ...` and `WHERE ... NOT IN ...` clauses.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @param string $field Field name.
+   * @param array $values Values to check with.
+   * @param string $method Name of the method that called this one.
+   * @return self
+   *
+   * @throws \RuntimeException if $value elements aren't in the correct form.
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * string.
+   */
+  private function processWhereIn($field, array $values, $method = 'whereIn') {
+    if (!is_string($field))
+      throw InvArgExcp::typeMismatch('field name', $field, 'String');
+
+    $where = $this->where;
+    if ($where != '')
+      $where = 'WHERE '.$field.' ';
+    else
+      $where .= ' AND '.$field.' ';
+    if ($method == 'whereNotIn')
+      $where .= 'NOT ';
+    $where .= 'IN (';
+
+    $count = 0;
+    foreach ($values as $value) {
+      // Correct $value.
+      try {
+        $correct = self::correctValue($value, $method);
+      } catch (Exception $e) {
+        throw $e;
+      }
+
+      // Attach conditions to WHERE clause.
+      if ($count != 0)
+        $where .= ', ';
+      $where .= $correct;
+
+      $count++;
+    }
+
+    $where .= ')';
+    $this->where = $where;
   }
 
   /**
@@ -617,10 +777,97 @@ class Query {
    *
    * @param array $clauses `WHERE` clauses.
    * @param string $operator `AND` or `OR`.
+   *
+   * @throws \RuntimeException if the arguments aren't in the correct form.
    */
-  private function buildWhereClause($clauses, $operator) {
-    // TODO: check the operator e build the string 'WHERE blabla AND blabla OR blabla'.
-    // TODO: change the property $where and $or_where.
+  private function buildWhereClause(array $clauses, $operator) {
+    $where = $this->where;
+    $method = ($operator == 'AND') ? 'where' : 'orWhere';
+
+    foreach ($clauses as $clause) {
+      if (!is_array($clause))
+        throw new RuntimeException(
+          'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+        );
+
+      if ($where != '')
+        $where = ' '.$operator.' ';
+      else
+        $where = 'WHERE ';
+
+      if (count($clause) == 2) {
+        $value = $clause[1];
+        $oprt = '=';
+      } elseif (count($clause) == 3) {
+        $value = $clause[2];
+        $oprt = $clause[1];
+        if (!self::isOperatorValid($oprt, 'buildWhereClause'))
+          throw new RuntimeException(
+            'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+          );
+      }
+
+      if (is_array($value) && ($oprt == 'between' || $oprt == 'BETWEEN')) {
+        // Replace the value with a string that contains the values in the
+        // array, linked by 'AND'.
+        // If the array doesn't contains exactly 2 values, raise an exception.
+        if (count($value) != 2)
+          throw new RuntimeException(
+            'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+          );
+        try {
+          $value[0] = self::correctValue($value[0]);
+          $value[1] = self::correctValue($value[1]);
+        } catch (Exception $e) {
+          throw $e;
+        }
+        $value = $value[0].' AND '.$value[1];
+      } else {
+        try {
+          $value = self::correctValue($value, $method);
+        } catch (Exception $e) {
+          throw $e;
+        }
+      }
+      // Any other case (e.g. value is integer) is ok as it is.
+
+      $where .= $clause[0].' '.$oprt.' '.$value;
+    }
+
+    $this->where = $where;
+  }
+
+  /**
+   * Correct value.
+   *
+   * @since 1.0.0
+   * @access private
+   * @static
+   *
+   * @param mixed $value Scalar value.
+   * @param string $method Name of the method that called this one (directly or
+   * indirectly).
+   * @return mixed The correct value.
+   *
+   * @throws \RuntimeException if the value is an array.
+   */
+  private static function correctValue($value, $method) {
+    if (is_string($value)) {
+      // Put quotes around the value if it is a string.
+      $value = "'".$value."'";
+    } elseif (is_null($value)) {
+      // Replace the value with a string 'NULL' if it is null.
+      $value = 'NULL';
+    } elseif (is_bool($value)) {
+      // Replace the value with a string 'TRUE' or 'FALSE' if it is boolean.
+      $value = ($value == true) ? 'TRUE' : 'FALSE';
+    } elseif (!is_scalar($value)) {
+      throw new RuntimeException(
+        'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+      );
+    }
+    // Any other case (e.g. value is integer) is ok as it is.
+    return $value;
   }
 
   /**
@@ -630,13 +877,200 @@ class Query {
    *
    * @since 1.0.0
    * @access private
+   * @static
    *
    * @param string $operator Operator that needs to be verified.
+   * @param string $method Name of the method that called this one.
    * @return boolean Whether the operator is valid or not.
    */
-  private function isOperatorValid($operator) {
-    $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'between', 'like');
+  private static function isOperatorValid($operator, $method) {
+    if ($method == 'join')
+      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'like', 'LIKE');
+    else
+      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'between', 'BETWEEN', 'like', 'LIKE');
 
     return in_array($operator, $valid_operators);
   }
+
+  /**
+   * Build the query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   *
+   * @throws \RuntimeException if $table property isn't set.
+   */
+  private function build() {
+    switch ($this->type) {
+      case 'select':
+        try {
+          return $this->buildSelect();
+        } catch (Exception $e) {
+          throw $e;
+        }
+        break;
+      case 'update':
+        return $this->buildUpdate();
+        break;
+      case 'insert':
+        return $this->buildInsert();
+        break;
+      case 'table_exists':
+        return $this->buildExist();
+        // TODO: create method.
+        break;
+      case 'delete':
+        return $this->buildDelete();
+        break;
+    }
+  }
+
+  /**
+   * Build SELECT query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   *
+   * @throws \RuntimeException if $table property isn't set.
+   */
+  private function buildSelect() {
+    // Create the `SELECT` part.
+    $query = 'SELECT ';
+    if (!is_array($this->select) || empty($this->select)) {
+      $part = $this->buildCount();
+      if ($part == '')
+        $query .= '* ';
+      else
+        $query .= $part.' ';
+    }
+    else {
+      $count = 0;
+      foreach ($this->select as $field) {
+        if ($count != 0)
+          $query .= ', ';
+        $query .= $field;
+        $count++;
+      }
+      $part .= $this->buildCount();
+      if ($part != '')
+        $query .= ', '.$part;
+      $query .= ' ';
+    }
+
+    // Append the `FROM` part.
+    $query .= 'FROM ';
+    if (!isset($this->table))
+      throw new RuntimeException('Cannot execute the query without a target table');
+    $query .= $this->table.' ';
+
+    // Append the `JOIN` part.
+    if (!empty($this->joins)) {
+      foreach ($this->joins as $join) {
+        // $join[0] --> second table.
+        // $join[1] --> field one.
+        // $join[2] --> operator.
+        // $join[3] --> field two.
+        // $join[4] --> join type.
+        $query .= sprintf(
+          '%1$s JOIN %2$s ON %3$s %4$s %5$s ',
+          $join[4],
+          $join[0],
+          $join[1],
+          $join[2],
+          $join[3]
+        );
+      }
+    }
+
+    // Append the `WHERE` part.
+    $query .= $this->where;
+
+    // Append the `GROUP BY` part.
+    if (isset($this->group_by)) {
+      $query .= ' '.$this->group_by;
+
+      // Append the `HAVING` part.
+      if (!empty($this->having)) {
+        $query .= sprintf(
+          ' HAVING %1$s %2$s %3$s',
+          $this->having[0],
+          $this->having[1],
+          $this->having[2]
+        );
+      }
+    }
+
+    // Append the `ORDER BY` part.
+    if (!empty($this->order_by)) {
+      $query .= ' ORDER BY ';
+      $count = 0;
+      foreach ($this->order_by as $field => $direction) {
+        if ($count != 0)
+          $query .= ', ';
+        $query .= $field.$direction;
+      }
+    }
+
+    return $query;
+  }
+
+  /**
+   * Build COUNT query part.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildCount() {
+    $part = '';
+
+    if ($this->count == true || empty($this->count)) {
+      $part .= 'COUNT(*)';
+    } elseif (is_array($this->count)) {
+      $count = 0;
+      foreach ($this->count as $field) {
+        if ($count != 0)
+          $part .= ', ';
+        $part .= 'COUNT('.$field.')';
+        $count++;
+      }
+    }
+
+    return $part;
+  }
+
+  /**
+   * Build UPDATE query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildUpdate()
+
+  /**
+   * Build INSERT query.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildInsert()
+
+  /**
+   * Build DELETE query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildDelete()
 }
