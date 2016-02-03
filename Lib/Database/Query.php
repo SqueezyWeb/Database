@@ -25,7 +25,7 @@ class Query {
   /**
    * Query type.
    *
-   * Accepted values: 'select', 'update', 'insert', 'table_exists', 'delete'.
+   * Accepted values: 'select', 'update', 'insert', 'delete'.
    *
    * @since 1.0.0
    * @access private
@@ -98,6 +98,9 @@ class Query {
   /**
    * UPDATE fields and values.
    *
+   * Associative array `key => value`, where `key` is the fields to update, and
+   * `value` is the new value.
+   *
    * @since 1.0.0
    * @access private
    * @var array
@@ -106,6 +109,9 @@ class Query {
 
   /**
    * INSERT fields and values.
+   *
+   * Associative array `key => value`, where `key` is the fields to insert, and
+   * `value` is the new value.
    *
    * @since 1.0.0
    * @access private
@@ -209,8 +215,22 @@ class Query {
    * @param array $values Associative array `key => value`, where `key` is the
    * name of the field and `value` is the new value.
    * @return self
+   *
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if field names in
+   * $values aren't strings.
+   * @throws \RuntimeException if values in $values aren't scalars.
    */
   public function update(array $values) {
+    foreach ($values as $field => &$value) {
+      if (!is_string($field))
+        throw InvArgExcp::typeMismatch('field name', $field, 'String');
+      try {
+        $value = self::correctValue($value, 'update');
+      } catch (Exception $e) {
+        throw $e;
+      }
+    }
+
     $this->update = $values;
     $this->type = 'update';
 
@@ -249,8 +269,22 @@ class Query {
    * @param array $values Associative array `key => value`, where `key` is the
    * field and `value` is the new value.
    * @return self
+   *
+   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if field names in
+   * $values aren't strings.
+   * @throws \RuntimeException if values in $values aren't scalars.
    */
   public function insert(array $values) {
+    foreach ($values as $field => &$value) {
+      if (!is_string($field))
+        throw InvArgExcp::typeMismatch('field name', $field, 'String');
+      try {
+        $value = self::correctValue($value, 'update');
+      } catch (Exception $e) {
+        throw $e;
+      }
+    }
+
     $this->insert = $values;
     $this->type = 'insert';
 
@@ -393,30 +427,6 @@ class Query {
     } catch (Exception $e) {
       throw $e;
     }
-  }
-
-  /**
-   * Check if table exists.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @param string $name Optional. Table name. Default: the one set with the
-   * `Query::table()` method.
-   * @return self
-   *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $name isn't a
-   * string or null.
-   */
-  public function hasTable($name = null) {
-    if (!is_string($name) && !is_null($name))
-      throw InvArgExcp::typeMismatch('table name', $name, 'String or null');
-
-    if (is_string($name))
-      $this->table = $name;
-    $this->type = 'table_exists';
-
-    return $this;
   }
 
   /**
@@ -900,30 +910,27 @@ class Query {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table property isn't set.
+   * @throws \RuntimeException if $table property isn't set or if there is some
+   * inconsistency with the data required by every specific method.
    */
   private function build() {
-    switch ($this->type) {
-      case 'select':
-        try {
+    try {
+      switch ($this->type) {
+        case 'select':
           return $this->buildSelect();
-        } catch (Exception $e) {
-          throw $e;
-        }
-        break;
-      case 'update':
-        return $this->buildUpdate();
-        break;
-      case 'insert':
-        return $this->buildInsert();
-        break;
-      case 'table_exists':
-        return $this->buildExist();
-        // TODO: create method.
-        break;
-      case 'delete':
-        return $this->buildDelete();
-        break;
+          break;
+        case 'update':
+          return $this->buildUpdate();
+          break;
+        case 'insert':
+          return $this->buildInsert();
+          break;
+        case 'delete':
+          return $this->buildDelete();
+          break;
+      }
+    } catch (Exception $e) {
+      throw $e;
     }
   }
 
@@ -1005,15 +1012,10 @@ class Query {
     }
 
     // Append the `ORDER BY` part.
-    if (!empty($this->order_by)) {
-      $query .= ' ORDER BY ';
-      $count = 0;
-      foreach ($this->order_by as $field => $direction) {
-        if ($count != 0)
-          $query .= ', ';
-        $query .= $field.$direction;
-      }
-    }
+    $query .= $this->buildOrderBy();
+
+    // Append the `LIMIT` part.
+    $query .= $this->buildLimit();
 
     return $query;
   }
@@ -1051,8 +1053,40 @@ class Query {
    * @access private
    *
    * @return string
+   *
+   * @throws \RuntimeException if $table and $update properties aren't set.
    */
-  private function buildUpdate()
+  private function buildUpdate() {
+    // `UPDATE` part.
+    if (!isset($this->table))
+      throw new RuntimeException('Cannot execute the query without a target table');
+
+    $query = 'UPDATE '.$this->table.' ';
+
+    // Append `SET` part.
+    if (!isset($this->update) || empty($this->update))
+      throw new RuntimeException('Cannot execute an UPDATE query without updating anything');
+
+    $query .= 'SET ';
+    $count = 0;
+    foreach ($this->update as $field => $value) {
+      if ($count != 0)
+        $query .= ', ';
+      $query .= $field.' = '.$value;
+      $count++;
+    }
+
+    // Append `WHERE` part.
+    $query .= ' '.$this->where;
+
+    // Append `ORDER BY` part.
+    $query .= $this->buildOrderBy();
+
+    // Append `LIMIT` part.
+    $query .= $this->buildLimit();
+
+    return $query;
+  }
 
   /**
    * Build INSERT query.
@@ -1061,8 +1095,34 @@ class Query {
    * @access private
    *
    * @return string
+   *
+   * @throws \RuntimeException if $table and $insert properties aren't set.
    */
-  private function buildInsert()
+  private function buildInsert() {
+    // `INSERT INTO` part.
+    if (!isset($this->table))
+      throw new RuntimeException('Cannot execute the query without a target table');
+    if (!isset($this->insert) || empty($this->insert))
+      throw new RuntimeException('Cannot execute an INSERT query without inserting anything');
+
+    $query = 'INSERT INTO '.$this->table.' (';
+
+    // Append fields and values.
+    $values = '';
+    $count = 0;
+    foreach ($this->insert as $field => $value) {
+      if ($count != 0) {
+        $query .= ', ';
+        $values .= ', ';
+      }
+      $query .= $field;
+      $values .= $value;
+      $count++;
+    }
+    $query .= ') VALUES ('.$values.')';
+
+    return $query;
+  }
 
   /**
    * Build DELETE query string.
@@ -1071,6 +1131,70 @@ class Query {
    * @access private
    *
    * @return string
+   *
+   * @throws \RuntimeException if $table property isn't set.
    */
-  private function buildDelete()
+  private function buildDelete() {
+    // `DELETE` part.
+    if (!isset($this->table))
+      throw new RuntimeException('Cannot execute the query without a target table');
+
+    $query = 'DELETE '.$this->delete_modifier.' FROM '.$this->table.' ';
+
+    // Append `WHERE` part.
+    $query .= $this->where;
+
+    // Append `ORDER BY` part.
+    $query .= $this->buildOrderBy();
+
+    // Append `LIMIT` part.
+    $query .= $this->buildLimit();
+
+    return $query;
+  }
+
+  /**
+   * Build ORDER BY query part.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildOrderBy() {
+    $part = '';
+
+    if (!empty($this->order_by)) {
+      $part .= ' ORDER BY ';
+      $count = 0;
+      foreach ($this->order_by as $field => $direction) {
+        if ($count != 0)
+          $part .= ', ';
+        $part .= $field.$direction;
+      }
+    }
+
+    return $part;
+  }
+
+  /**
+   * Build LIMIT query part.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildLimit() {
+    $part = '';
+
+    if (isset($this->limit)) {
+      $part .= ' LIMIT ';
+      if (isset($this->offset) && !is_null($this->offset))
+        $part .= $this->offset.', ';
+      $part .= $this->limit;
+    }
+
+    return $part;
+  }
 }
