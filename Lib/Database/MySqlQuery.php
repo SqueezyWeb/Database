@@ -1,6 +1,6 @@
 <?php
 /**
- * Query class file.
+ * MySqlQuery class file.
  *
  * @package Freyja\Database
  * @copyright 2016 SqueezyWeb
@@ -14,7 +14,7 @@ use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
 use \RuntimeException;
 
 /**
- * Query class.
+ * MySqlQuery class.
  *
  * @package Freyja\Database
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
