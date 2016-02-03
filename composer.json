@@ -1,5 +1,5 @@
 {
-    "name": "squeezyweb/database",
+    "name": "freyja/database",
     "description": "Simple database manager.",
     "type": "library",
     "license": "GPLv2+",
@@ -15,7 +15,7 @@
     },
     "autoload": {
       "psr-4": {
-        "SqueezyWeb\\Database\\": "Lib"
+        "Freyja\\Database\\": "Lib"
       }
     }
 }

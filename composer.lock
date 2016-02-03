@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "cecad025290f63bacd656360c269da2a",
-    "content-hash": "1fb29b0fe57acfed81d004bbb19c3343",
+    "hash": "18d628cd0b35f79d3bfc4c636867c23f",
+    "content-hash": "5a7072bb105b9a0f8a89f16a6ce4d751",
     "packages": [
         {
             "name": "squeezyweb/exceptions",
