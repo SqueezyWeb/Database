@@ -5,12 +5,12 @@
  * @package Freyja\Database
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
- * @since 1.0.0
+ * @since 0.1.0
  */
 
 namespace Freyja\Database;
 
-use SqueezyWeb\Exceptions\InvalidArgumentException as InvArgExcp;
+use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
 use \RuntimeException;
 
 /**
@@ -18,10 +18,10 @@ use \RuntimeException;
  *
  * @package Freyja\Database
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
- * @since 1.0.0
+ * @since 0.1.0
  * @version 1.0.0
  */
-class Query {
+class MySqlQuery implements Query {
   /**
    * Query type.
    *
@@ -170,6 +170,15 @@ class Query {
    * @var int
    */
   private $offset;
+
+  /**
+   * Query result.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var mixed
+   */
+  private $result;
 
   /**
    * Set target table.
@@ -664,6 +673,44 @@ class Query {
     } catch (Exception $e) {
       throw $e;
     }
+  }
+
+  /**
+   * Check query result existence.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return boolean Whether the result is set or not.
+   */
+  public function hasResult() {
+    return isset($this->result);
+  }
+
+  /**
+   * Set query result.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param mixed $result Query result.
+   */
+  public function setResult($result) {
+    $this->result = $result;
+  }
+
+  /**
+   * Retrieve query result.
+   *
+   * Retrive result(s) of the query. If result isn't set, null will be returned.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return mixed Query result.
+   */
+  public function getResult() {
+    return $this->result;
   }
 
   /**
