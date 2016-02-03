@@ -1,0 +1,52 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "18d628cd0b35f79d3bfc4c636867c23f",
+    "content-hash": "5a7072bb105b9a0f8a89f16a6ce4d751",
+    "packages": [
+        {
+            "name": "squeezyweb/exceptions",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SqueezyWeb/Exceptions.git",
+                "reference": "b2ed4ed65f5b870f4e181236c1aa1cf3357c0743"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SqueezyWeb/Exceptions/zipball/b2ed4ed65f5b870f4e181236c1aa1cf3357c0743",
+                "reference": "b2ed4ed65f5b870f4e181236c1aa1cf3357c0743",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SqueezyWeb\\Exceptions\\": "Lib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPLv2+"
+            ],
+            "authors": [
+                {
+                    "name": "Gianluca Merlo",
+                    "email": "gianluca@squeezyweb.com"
+                }
+            ],
+            "description": "Simple library of exceptions.",
+            "time": "2016-02-01 09:55:10"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

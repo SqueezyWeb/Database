@@ -1,0 +1,21 @@
+{
+    "name": "freyja/database",
+    "description": "Simple database manager.",
+    "type": "library",
+    "license": "GPLv2+",
+    "authors": [
+        {
+            "name": "Gianluca Merlo",
+            "email": "gianluca@squeezyweb.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+      "SqueezyWeb/Exceptions": "~1.0.0"
+    },
+    "autoload": {
+      "psr-4": {
+        "Freyja\\Database\\": "Lib"
+      }
+    }
+}
