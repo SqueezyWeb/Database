@@ -11,7 +11,7 @@
 namespace Freyja\Database;
 
 use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use \RuntimeException;
+use RuntimeException;
 
 /**
  * MySqlQuery class.
@@ -21,7 +21,7 @@ use \RuntimeException;
  * @since 0.1.0
  * @version 1.0.0
  */
-class MySqlQuery implements Query {
+class MySqlQuery extends Query implements QueryInterface {
   /**
    * Query type.
    *
@@ -714,6 +714,38 @@ class MySqlQuery implements Query {
   }
 
   /**
+   * Build the query string.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string
+   *
+   * @throws \RuntimeException if $table property isn't set or if there is some
+   * inconsistency with the data required by every specific method.
+   */
+  public function build() {
+    try {
+      switch ($this->type) {
+        case 'select':
+          return $this->buildSelect();
+          break;
+        case 'update':
+          return $this->buildUpdate();
+          break;
+        case 'insert':
+          return $this->buildInsert();
+          break;
+        case 'delete':
+          return $this->buildDelete();
+          break;
+      }
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
+
+  /**
    * Process WHERE clauses.
    *
    * @since 1.0.0
@@ -947,38 +979,6 @@ class MySqlQuery implements Query {
       $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'between', 'BETWEEN', 'like', 'LIKE');
 
     return in_array($operator, $valid_operators);
-  }
-
-  /**
-   * Build the query string.
-   *
-   * @since 1.0.0
-   * @access private
-   *
-   * @return string
-   *
-   * @throws \RuntimeException if $table property isn't set or if there is some
-   * inconsistency with the data required by every specific method.
-   */
-  private function build() {
-    try {
-      switch ($this->type) {
-        case 'select':
-          return $this->buildSelect();
-          break;
-        case 'update':
-          return $this->buildUpdate();
-          break;
-        case 'insert':
-          return $this->buildInsert();
-          break;
-        case 'delete':
-          return $this->buildDelete();
-          break;
-      }
-    } catch (Exception $e) {
-      throw $e;
-    }
   }
 
   /**
