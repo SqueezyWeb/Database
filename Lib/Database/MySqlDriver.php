@@ -11,6 +11,7 @@
 namespace Freyja\Database;
 
 use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
+use Freyja\Database\Query;
 use mysqli;
 
 /**
@@ -92,16 +93,10 @@ class MySqlDriver implements Driver {
    * @since 1.0.0
    * @access public
    *
-   * @param string Query that will be executed.
+   * @param Query Query that will be executed.
    * @return mixed Query result.
-   *
-   * @throws Freyja\Exceptions\InvalidArgumentException if $query isn't a
-   * string.
    */
-  public function execute($query) {
-    if (!is_string($query))
-      throw InvArgExcp::typeMismatch('query string', $query, 'String');
-
+  public function execute(Query $query) {
     return $this->connection->query($query);
   }
 }
