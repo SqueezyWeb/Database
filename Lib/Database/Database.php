@@ -10,8 +10,9 @@
 
 namespace Freyja\Database;
 use Freyja\Database\Driver;
+use Freyja\Database\Query;
 use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use \RuntimeException;
+use RuntimeException;
 
 /**
  * Database class.
@@ -78,11 +79,11 @@ class Database {
    * isn't a string.
    */
   public function connect($host, $database, $username, $password) {
-    foreach (array('host', 'database', 'username', 'password') as $arg)
-      if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
-
-    $this->driver->connect($host, $database, $username, $password);
+    try {
+      $this->driver->connect($host, $database, $username, $password);
+    } catch (Exception $e) {
+      throw $e;
+    }
 
     return $this;
   }
@@ -142,7 +143,7 @@ class Database {
    */
   public function execute(Query $query) {
     if (!$query->hasResult()) {
-      $result = $this->driver->execute($query->build());
+      $result = $this->driver->execute($query);
       $query->setResult($result);
     }
 
