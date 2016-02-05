@@ -435,13 +435,23 @@ class Field {
    * @return self
    *
    * @throws \LogicException if the field is set to NOT NULL.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $value isn't a
+   * scalar.
    */
   public function default($value = self::NULL) {
     if ($value == self::NULL && $this->nullable == false)
       throw new LogicException('Cannot set default value to NULL if the field is NOT NULL');
 
-    if (is_scalar($default))
+    if (!is_scalar($value))
+      throw InvArgExcp::typeMismatch('default value', $value, 'Scalar');
+
+    if (is_string($value) && $value != self::NULL)
+      $this->default = "'".$value."'";
+    elseif (is_bool($value))
+      $this->default = ($value == true) ? 'TRUE' : 'FALSE';
+    else
       $this->default = $value;
+
     return $this;
   }
 
@@ -501,6 +511,18 @@ class Field {
   }
 
   /**
+   * Retrieve field name.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string Field name.
+   */
+  public function getName() {
+    return $this->name;
+  }
+
+  /**
    * Retrieve field information.
    *
    * Return an associative array where `key`s will be: 'name', 'type', 'length'
@@ -519,7 +541,7 @@ class Field {
     $field = array();
 
     if (!isset($this->type))
-      throw new RuntimeException('Filed type isn\'t set');
+      throw new RuntimeException('Field type isn\'t set');
 
     // Push the name and the type of the field in the array.
     $field['name'] = $this->name;
