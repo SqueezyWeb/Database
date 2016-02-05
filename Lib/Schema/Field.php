@@ -10,8 +10,8 @@
 namespace Freyja\Database\Schema;
 
 use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use \RuntimeException;
-use \LogicException;
+use RuntimeException;
+use LogicException;
 
 /**
  * Field class.
@@ -525,10 +525,14 @@ class Field {
   /**
    * Retrieve field information.
    *
-   * Return an associative array where `key`s will be: 'name', 'type', 'length'
-   * (only if set), 'decimals' (only if set), 'default' (only if set),
-   * 'not_null', 'unsigned', 'auto_increment'.
-   * All `value`s will be the exact value that can be inserted in the query.
+   * Return an associative array `key => value`, where `key` is the field name
+   * and `value` is an associative array where keys are: 'type', 'default',
+   * 'NOT NULL', 'UNSIGNED', 'AUTO_INCREMENT'.
+   * Keys 'type' and 'default' will have the exact value that can be inserted in
+   * the query, except for `'default' => null`, which means that the default
+   * value isn't set for this field.
+   * The other keys of the internal array will have a boolean value, and if it
+   * is true the key can be inserted in the query.
    *
    * @since 1.0.0
    * @access public
@@ -538,16 +542,13 @@ class Field {
    * @throws \RuntimeException if field type isn't set.
    */
   public function getField() {
-    $field = array();
-
     if (!isset($this->type))
       throw new RuntimeException('Field type isn\'t set');
 
-    // Push the name and the type of the field in the array.
-    $field['name'] = $this->name;
-    $field['type'] = $this->type;
+    $info = array();
 
-    // Push $length and $decimals in the array if necessary.
+    // Attach $length and $decimals to the type if necessary.
+    $type = $this->type;
     switch ($this->type) {
       case self::INT:
       case self::TINY_INT:
@@ -556,31 +557,36 @@ class Field {
       case self::BIG_INT:
       case self::CHAR:
       case self::VARCHAR:
-        $field['length'] = $this->length;
+        $type .= '('.$this->length.')';
         break;
       case self::FLOAT:
       case self::DOUBLE:
       case self::DECIMAL:
-        $field['length'] = $this->length;
-        $field['decimals'] = $this->decimals;
+        $type .= sprintf(
+          '(%1$s,%2$s)',
+          $this->length,
+          $this->decimals
+        );
         break;
     }
 
-    // Push the default value (if set) in the array.
-    if (isset($this->default))
-      $field['default'] = $this->default;
+    // Push the type of the field in the array.
+    $info['type'] = $type;
 
-    // Push NOT NULL (if the field isn't nullable) in the array.
-    if (!$this->nullable)
-      $field['not_null'] = 'NOT NULL';
+    // Push the default value in the array.
+    $info['default'] = $this->default;
 
-    // Push UNSIGNED in the array if the field is set to UNSIGNED.
-    if ($this->unsigned)
-      $field['unsigned'] = 'UNSIGNED';
+    // Push NOT NULL in the array.
+    $info['NOT NULL'] = !$this->nullable;
 
-    // Push AUTO_INCREMENT in the array if the field is set to AUTO_INCREMENT.
-    if ($this->auto_increment)
-      $field['auto_increment'] = 'AUTO_INCREMENT';
+    // Push UNSIGNED in the array.
+    $field['UNSIGNED'] = $this->unsigned;
+
+    // Push AUTO_INCREMENT in the array.
+    $field['AUTO_INCREMENT'] = $this->auto_increment;
+
+    // Push the name and the info of the field in the array.
+    $field = array($this->name => $info);
 
     return $field;
   }
