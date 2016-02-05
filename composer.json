@@ -11,7 +11,8 @@
     ],
     "minimum-stability": "dev",
     "require": {
-      "SqueezyWeb/Exceptions": "~1.0.0"
+      "SqueezyWeb/Exceptions": "~1.0.0",
+      "symfony/yaml": "~3.0.2"
     },
     "autoload": {
       "psr-4": {
