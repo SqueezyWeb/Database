@@ -13,7 +13,7 @@ use Freyja\Database\Query;
 use Freyja\Database\QueryInterface;
 use Freyja\Database\Schema\Field;
 use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use \LogicException;
+use LogicException;
 
 /**
  * Table class.
@@ -62,6 +62,11 @@ class Table extends Query implements QueryInterface {
 
   /**
    * Foreign keys.
+   *
+   * Array of associative arrays `key => value`, where `key` will be 'field',
+   * 'references' and 'on'. 'field' is the foreign key field, 'references' is
+   * the name of the table references by the key, and 'on' is the matching field
+   * of the table referenced.
    *
    * @since 1.0.0
    * @access private
@@ -199,11 +204,74 @@ class Table extends Query implements QueryInterface {
 
     // TODO: Check in the schema if the table $table and the column $referenced_field exist.
 
-    $this->foreign_keys[] = array(
-      'field' => $field,
+    $this->foreign_keys[$field][] = array(
       'references' => $table,
       'on', $referenced_field
     );
+  }
+
+  /**
+   * Retrieve table name.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string Table name.
+   */
+  public function getName() {
+    return $this->name;
+  }
+
+  /**
+   * Retrieve table information.
+   *
+   * Associative array `key => value`, where `key` is the table name, and
+   * `value` is an associative array, in which the keys are: 'fields', of which
+   * the value is an array containing all the fields as they are returned from
+   * `Freyja\Database\Schema\Field::getField()`; 'primary', of which the value
+   * is an array containing the primary_key name as `key`, and the array of
+   * fields that form the key; 'foreign', of which the value is an array, where
+   * the keys are 'field', 'references' and 'on', and the values are the fields
+   * and table names that identify the foreign_key; 'charset', 'collation' and
+   * 'engine', of which the values identify respectively the character set, the
+   * collation and the engine of the table.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return array Table information.
+   *
+   * @throws \RuntimeException The one possibly raised by
+   * Freyja\Database\Schema\Field::getField().
+   */
+  public function getTable() {
+    // Set primary key information.
+    $primary = array();
+    if (isset($this->primary_name))
+      $primary[$this->primary_name] = $this->primary_keys;
+
+    // Set fields information.
+    $fields = array();
+    foreach ($this->fields as $field) {
+      try {
+        $fields = array_merge($fields, $field->getField());
+      } catch (Exception $e) {
+        throw $e;
+      }
+    }
+
+    // Arrange information.
+    $info = array(
+      'fields' => $fields,
+      'primary' => $primary,
+      'foreign' => $this->foreign_keys,
+      'charset' => $this->charset,
+      'collation' => $this->collation,
+      'engine' => $this->engine
+    );
+
+    // Return complete information array, with the table name.
+    return array($this->name => $info);
   }
 
   /**
@@ -229,42 +297,36 @@ class Table extends Query implements QueryInterface {
         $query .= ', ';
 
       try {
-        $info = $field->getField();
+        $field_info = $field->getField();
       } catch (Exception $e) {
         throw $e;
       }
+      $field_name = key($field_info);
+      $info = $field_info[$field_name];
 
       // Append field name and type.
-      $query .= $info['name'].' '.$info['type'];
-
-      // Append length and decimals, if set.
-      if (isset($info['length']))
-        $query .= sprintf(
-          '(%1$s%2$s)',
-          $length,
-          isset($info['decimals']) ? ','.$info['decimals'] : ''
-        );
+      $query .= $field_name.' '.$info['type'];
 
       // Append default value, if set.
-      if (isset($info['default']))
+      if (!is_null($info['default']))
         $query .= ' DEFAULT '.$info['default'];
 
-      // Append NOT NULL, if set.
-      if (isset($info['not_null']))
-        $query .= ' '.$info['not_null'];
+      // Append NOT NULL, if true.
+      if ($info['NOT NULL'])
+        $query .= ' NOT NULL';
 
-      // Append UNSIGNED, if set.
-      if (isset($info['unsigned']))
-        $query .= ' '.$info['unsigned'];
+      // Append UNSIGNED, if true.
+      if ($info['UNSIGNED'])
+        $query .= ' UNSIGNED';
 
-      // Append AUTO_INCREMENT, if set.
-      if (isset($info['auto_increment'])) {
+      // Append AUTO_INCREMENT, if true.
+      if ($info['AUTO_INCREMENT']) {
         if ($autoinc_fields > 0)
           throw new LogicException('AUTO_INCREMENT cannot be set on more than one field');
         if (!in_array($info['name'], $this->primary_keys))
           throw new LogicException('AUTO_INCREMENT cannot be set on a field that isn\'t primary key');
 
-        $query .= ' '.$info['auto_increment'];
+        $query .= ' AUTO_INCREMENT';
       }
     }
 
