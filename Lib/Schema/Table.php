@@ -34,6 +34,30 @@ class Table extends Query implements QueryInterface {
   private $name;
 
   /**
+   * Query type.
+   *
+   * Query type that will be executed on the table.
+   * It can be: 'create', 'drop', 'alter'. Default 'create'.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var string
+   */
+  private $type = 'create';
+
+  /**
+   * To be altered fields.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var array
+   */
+  private $alter_fields = array(
+    'ADD' => array(),
+    'DROP COLUMN' => array()
+  );
+
+  /**
    * Table fields.
    *
    * @since 1.0.0
@@ -108,7 +132,8 @@ class Table extends Query implements QueryInterface {
    * @access public
    *
    * @param string $name Table name.
-   * @param array $fields Fields of the table.
+   * @param array $fields Optional. Fields of the table. If the type of the
+   * query is 'create', it MUST NOT be an empty array. Default empty array.
    * @param string $charset Optional. Table character set. Default 'utf8'.
    * @param string $collation Optional. Table collation.
    * Default 'utf8_unicode_ci'.
@@ -117,14 +142,11 @@ class Table extends Query implements QueryInterface {
    * @throws Freyja\Exceptions\InvalidArgumentException if $name or $charset or
    * $collation or $engine aren't strings, or if $fields elements aren't
    * Freyja\Database\Schema\Field objects.
-   * @throws \LogicException if $fields is empty.
    */
-  public function __construct($name, array $fields, $charset = 'utf8', $collation = 'utf8_unicode_ci', $engine = 'InnoDB') {
+  public function __construct($name, array $fields = array(), $charset = 'utf8', $collation = 'utf8_unicode_ci', $engine = 'InnoDB') {
     foreach (array('name', 'charset', 'collation', 'engine') as $arg)
       if (!is_string($$arg))
         throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
-    if (empty($fields))
-      throw new LogicException('A table must have at least 1 column');
     foreach ($fields as $field) {
       if (!is_a($field, 'Freyja\Database\Schema\Field'))
         throw InvArgExcp::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
@@ -275,6 +297,90 @@ class Table extends Query implements QueryInterface {
   }
 
   /**
+   * Retrieve alteration information.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return array Associative array `key => value`, where `key` is the type of
+   * the alteration (e.g. 'ADD') and `value` is an array of arrays, exactly as
+   * they are outputed from `Freyja\Database\Schema\Field::getField()`.
+   *
+   * @throws \RuntimeException if raised by the method
+   * `Freyja\Database\Schema\Field::getField()`.
+   */
+  public function getAlteration() {
+    $alteration = array();
+    foreach ($this->alter_fields as $type => $fields) {
+      $single_type_alteration = array();
+      foreach ($fields as $field) {
+        try {
+          $single_type_alteration = array_merge($single_type_alteration, $field->getField());
+        } catch (Exception $e) {
+          throw $e;
+        }
+      }
+      $alteration[$type] = $single_type_alteration;
+    }
+    return $alteration;
+  }
+
+  /**
+   * Set query type to 'drop'.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return self
+   */
+  public function drop() {
+    $this->type = 'drop';
+    return $this;
+  }
+
+  /**
+   * Add field(s) to table.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param array $fields Fields that will be added.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if it is raised by the
+   * method `Table::alter()`.
+   * @throws \LogicException if it is raised by the method `Table::alter()`.
+   */
+  public function addFields(array $fields) {
+    try {
+      return $this->alter($fields, 'ADD');
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
+
+  /**
+   * Remove field(s) from table.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param array $fields Fields that will be removed.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if it is raised by the
+   * method `Table::alter()`.
+   * @throws \LogicException if it is raised by the method `Table::alter()`.
+   */
+  public function removeFields(array $fields) {
+    try {
+      return $this->alter($fields, 'DROP COLUMN');
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
+
+  /**
    * Build the query string.
    *
    * @since 1.0.0
@@ -282,16 +388,75 @@ class Table extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if it is raised by the Field method called.
-   * @see Field::getField()
-   * @throws \LogicException if AUTO_INCREMENT is set on more than one field, or
-   * in a non primary key field.
+   * @throws \RuntimeException if it is raised by the methods called.
+   * @throws \LogicException if it is raised by the methods called.
+   * @see Freyja\Database\Schema\Table::buildCreate()
    */
   public function build() {
+    try {
+      switch ($this->type) {
+        case 'create':
+          return $this->buildCreate();
+          break;
+        case 'drop':
+          return $this->buildDrop();
+          break;
+        case 'alter':
+          return $this->buildAlter();
+          break;
+      }
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
+
+  /**
+   * Alter table.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @param array $fields Fields to be altered.
+   * @param string $type Alter type. Value can be 'add' or 'drop'.
+   *
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if some element in
+   * $fields isn't a Freyja\Database\Schema\Field object.
+   * @throws \LogicException if $fields is an empty array.
+   */
+  private function alter(array $fields, $type) {
+    if (empty($fields))
+      throw new LogicException('It\'s required at least one column to alter the table');
+    foreach ($fields as $field)
+      if (!is_a($field, 'Freyja\Database\Schema\Field'))
+        throw InvArgExcp::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
+
+    $this->type = 'alter';
+    $this->alter_fields[$type] = array_merge($this->alter_fields, $fields);
+    return $this;
+  }
+
+  /**
+   * Build 'create' query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   *
+   * @throws \RuntimeException if it is raised by the Field method called.
+   * @see Freyja\Database\Schema\Field::getField()
+   * @throws \LogicException if AUTO_INCREMENT is set on more than one field, or
+   * in a non primary key field, or if $fields property is an empty array.
+   */
+  private function buildCreate() {
     $query = 'CREATE TABLE IF NOT EXISTS '.$this->name.' (';
 
     $count = 0;
     $autoinc_fields = 0;
+    if (empty($fields))
+      throw new LogicException('A table must have at least 1 column');
     foreach ($this->fields as $field) {
       if ($count != 0)
         $query .= ', ';
@@ -363,5 +528,76 @@ class Table extends Query implements QueryInterface {
       $this->collation,
       $this->engine
     );
+
+    return $query;
+  }
+
+  /**
+   * Build 'drop' query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   */
+  private function buildDrop() {
+    $query = sprintf(
+      'DROP TABLE IF EXISTS %s;',
+      $this->name
+    );
+
+    return $query;
+  }
+
+  /**
+   * Build 'alter' query string.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   *
+   * @throws \RuntimeException if it is raised by the Field method called.
+   * @see Freyja\Database\Schema\Field::getField()
+   */
+  private function buildAlter() {
+    $query = sprintf('ALTER TABLE %s', $this->name);
+
+    $count = 0;
+    foreach ($this->alter_fields as $type => $fields) {
+      foreach ($fields as $field) {
+        if ($count != 0)
+          $query .= ', ';
+        try {
+          $info = $field->getField();
+        } catch (Exception $e) {
+          throw $e;
+        }
+        $field_name = $field->getName();
+        $query .= sprintf(
+          '%1$s %2$s',
+          $type,
+          $field_name;
+        );
+
+        // Prepare string based on the type of the alteration.
+        // The switch is useless at the moment, but it's here in anticipation of
+        // future additions.
+        switch ($type) {
+          case 'ADD':
+            $query .= ' '.$info[$field_name]['type'];
+            if (!is_null($info[$field_name]['default']))
+              $query .= ' DEFAULT '.$info[$field_name]['default'];
+            if ($info[$field_name]['NOT NULL'])
+              $query .= ' NOT NULL';
+            break;
+        }
+
+        $count++;
+      }
+    }
+
+    $query .= ';';
+    return $query;
   }
 }
