@@ -24,6 +24,15 @@ use Freyja\Exceptions\ExceptionInterface;
  */
 class Database {
   /**
+   * Database name.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var string
+   */
+  private $name;
+
+  /**
    * Driver used to execute queries.
    *
    * @since 1.0.0
@@ -86,6 +95,7 @@ class Database {
       throw $e;
     }
 
+    $this->name = $database;
     return $this;
   }
 
@@ -127,6 +137,18 @@ class Database {
    */
   public function getDriver() {
     return get_class($this->driver);
+  }
+
+  /**
+   * Retrieve database name.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string Database name.
+   */
+  public function getName() {
+    return $this->name;
   }
 
   /**
