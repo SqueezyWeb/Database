@@ -185,6 +185,18 @@ class MySqlQuery extends Query implements QueryInterface {
   private $result;
 
   /**
+   * Value delimiter.
+   *
+   * Used to mark string values, so that they can be recognized and escaped
+   * when the query will be executed.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var string
+   */
+  private $delimiter = '{esc}';
+
+  /**
    * DELETE modifiers constants.
    *
    * @since 1.0.0
@@ -734,6 +746,18 @@ class MySqlQuery extends Query implements QueryInterface {
   }
 
   /**
+   * Retrieve delimiter.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string
+   */
+  public function getDelimiter() {
+    return $this->delimiter;
+  }
+
+  /**
    * Process WHERE clauses.
    *
    * @since 1.0.0
@@ -919,8 +943,12 @@ class MySqlQuery extends Query implements QueryInterface {
    */
   private static function correctValue($value, $method) {
     if (is_string($value)) {
-      // Put quotes around the value if it is a string.
-      $value = "'".$value."'";
+      // Put quotes and delimiters around the value if it is a string.
+      $value = sprintf(
+        '\'%1$s%2$s%1$s\'',
+        $this->delimiter,
+        $value
+      );
     } elseif (is_null($value)) {
       // Replace the value with a string 'NULL' if it is null.
       $value = 'NULL';
@@ -935,7 +963,7 @@ class MySqlQuery extends Query implements QueryInterface {
           'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
         );
       else
-        $value = $serialized;
+        $value = $this->delimiter.$serialized.$this->delimiter;
     }
     // Any other case (e.g. value is integer) is ok as it is.
     return $value;

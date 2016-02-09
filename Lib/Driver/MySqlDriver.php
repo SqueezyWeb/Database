@@ -91,6 +91,14 @@ class MySqlDriver implements Driver {
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
   public function execute(Query $query) {
+    $delimiter = $query->getDelimiter();
+    $query = (string) $query;
+
+    // Escape values between delimiters.
+    $query = preg_replace_callback('/\{esc\}(.*?)\{esc\}/', function($matches) use ($this) {
+      return $this->connection->real_escape_string($matches[1]);
+    }, $query);
+
     $result = $this->connection->query($query);
 
     // Handle query errors.
