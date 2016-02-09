@@ -20,26 +20,37 @@ namespace Freyja\Database;
  */
 abstract class Query implements QueryInterface {
   /**
+   * Query result.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var mixed
+   */
+  private $result;
+
+  /**
    * Check query result existence.
    *
    * @since 1.0.0
    * @access public
-   * @abstract
    *
    * @return boolean Whether the result is set or not.
    */
-  abstract public function hasResult();
+  public function hasResult() {
+    return !is_null($this->result);
+  }
 
   /**
    * Set query result.
    *
    * @since 1.0.0
    * @access public
-   * @abstract
    *
    * @param mixed $result Query result.
    */
-  abstract public function setResult($result);
+  public function setResult($result) {
+    $this->result = $result;
+  }
 
   /**
    * Retrieve query result.
@@ -48,11 +59,12 @@ abstract class Query implements QueryInterface {
    *
    * @since 1.0.0
    * @access public
-   * @abstract
    *
    * @return mixed Query result.
    */
-  abstract public function getResult();
+  public function getResult() {
+    return $this->result;
+  }
 
   /**
    * Build the query string.

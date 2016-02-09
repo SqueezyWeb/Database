@@ -4,14 +4,14 @@
  *
  * @package Freyja\Database
  * @copyright 2016 SqueezyWeb
- * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
 namespace Freyja\Database;
 
-use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use RuntimeException;
+use Freyja\Exceptions\InvalidArgumentException;
+use Freyja\Exceptions\RuntimeException;
+use Freyja\Exceptions\ExceptionInterface;
 
 /**
  * MySqlQuery class.
@@ -55,13 +55,13 @@ class MySqlQuery extends Query implements QueryInterface {
    * COUNT.
    *
    * True correspond to `COUNT(*)`. Or array containing the fields to be
-   * counted. Default false.
+   * counted.
    *
    * @since 1.0.0
    * @access private
    * @var boolean|array
    */
-  private $count = false;
+  private $count;
 
   /**
    * ORDERBY.
@@ -122,8 +122,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * DELETE modifier.
    *
-   * DELETE modifier can be one of the following: 'LOW_PRIORITY', 'QUICK' and
-   * 'IGNORE'.
+   * DELETE modifier can be one of the following: MySqlQuery::LOW_PRIORITY,
+   * MySqlQuery::QUICK and MySqlQuery::IGNORE.
    *
    * @since 1.0.0
    * @access private
@@ -137,6 +137,10 @@ class MySqlQuery extends Query implements QueryInterface {
    * Array of arrays, each of which contains the table to join with, the field
    * name of the first table, the operator, the field name of the second table,
    * and the type of the JOIN.
+   * Array structure:
+   *  array(
+   *    array($table, $first_table_field, $operator, $second_table_field, $type)
+   *  );
    *
    * @since 1.0.0
    * @access private
@@ -181,6 +185,17 @@ class MySqlQuery extends Query implements QueryInterface {
   private $result;
 
   /**
+   * DELETE modifiers constants.
+   *
+   * @since 1.0.0
+   * @access public
+   * @var string
+   */
+  const LOW_PRIORITY = 'LOW_PRIORITY';
+  const QUICK = 'QUICK';
+  const IGNORE = 'IGNORE';
+
+  /**
    * Set target table.
    *
    * @since 1.0.0
@@ -192,7 +207,7 @@ class MySqlQuery extends Query implements QueryInterface {
   public function table($name) {
     // Verify that $name is a string.
     if (!is_string($name))
-      throw InvArgExcp::typeMismatch('table name', $name, 'String or array');
+      throw InvalidArgumentException::typeMismatch('table name', $name, 'String or array');
 
     $this->table = $name;
     return $this;
@@ -209,7 +224,14 @@ class MySqlQuery extends Query implements QueryInterface {
    */
   public function select($fields) {
     $fields = is_array($fields) ? $fields : func_get_args();
-    $this->select = array_filter($fields, 'is_string');
+    if (!empty($fields)) {
+      $fields = array_filter($fields, 'is_string');
+      if (empty($fields))
+        throw new InvalidArgumentException(
+          sprintf('Fields passed to %s() are not valid.', __NAMESPACE__.__METHOD__)
+        );
+    }
+    $this->select = $fields;
     $this->type = 'select';
 
     return $this;
@@ -225,17 +247,14 @@ class MySqlQuery extends Query implements QueryInterface {
    * name of the field and `value` is the new value.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if field names in
-   * $values aren't strings.
-   * @throws \RuntimeException if values in $values aren't scalars.
+   * @throws Freyja\Exceptions\RuntimeException if values in $values aren't
+   * scalars.
    */
   public function update(array $values) {
-    foreach ($values as $field => &$value) {
-      if (!is_string($field))
-        throw InvArgExcp::typeMismatch('field name', $field, 'String');
+    foreach ($values as &$value) {
       try {
         $value = self::correctValue($value, 'update');
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     }
@@ -279,17 +298,14 @@ class MySqlQuery extends Query implements QueryInterface {
    * field and `value` is the new value.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if field names in
-   * $values aren't strings.
-   * @throws \RuntimeException if values in $values aren't scalars.
+   * @throws Freyja\Exceptions\RuntimeException if values in $values aren't
+   * scalars.
    */
   public function insert(array $values) {
-    foreach ($values as $field => &$value) {
-      if (!is_string($field))
-        throw InvArgExcp::typeMismatch('field name', $field, 'String');
+    foreach ($values as &$value) {
       try {
         $value = self::correctValue($value, 'update');
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     }
@@ -303,26 +319,31 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set a DELETE query.
    *
-   * If clause is set through the method `Query::where()`, all rows of the table
+   * If clause is set through the method `MySqlQuery::where()`, all rows of the table
    * will be affected.
    *
    * @since 1.0.0
    * @access public
    *
    * @param string $modifier Optional. DELETE Modifier. Allowed keywords: '',
-   * 'LOW_PRIORITY', 'QUICK', 'IGNORE' (either uppercase or lowercase).
+   * `MySqlQuery::LOW_PRIORITY`, `MySqlQuery::QUICK`, `MySqlQuery::IGNORE`.
    * Default: ''.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $modifier isn't a
-   * string.
-   * @throws \RuntimeException if $modifier isn't one of the allowed value.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $modifier isn't a
+   * string and one of the allowed value.
    */
   public function delete($modifier = '') {
     if (!is_string($modifier))
-      throw InvArgExcp::typeMismatch('delete modifier', $modifier, 'String');
+      throw InvalidArgumentException::typeMismatch('delete modifier', $modifier, 'String');
+    $accepted_keywords = array(
+      '',
+      MySqlQuery::LOW_PRIORITY,
+      MySqlQuery::QUICK,
+      MySqlQuery::IGNORE
+    );
     if (!in_array($modifier, $accepted_keywords))
-      throw new RuntimeException('Modifier passed to `Query::delete()` isn\'t one of the allowed keywords');
+      throw new InvalidArgumentException(sprintf('Modifier passed to %s() is invalid', __NAMESPACE__.__METHOD__));
 
     $this->delete_modifier = $modifier;
     $this->type = 'delete';
@@ -332,7 +353,7 @@ class MySqlQuery extends Query implements QueryInterface {
    * JOIN tables.
    *
    * JOIN two tables. Second table of the JOIN will be the first argument of
-   * this method. The first one will be the one set with the `Query::table()`
+   * this method. The first one will be the one set with the `MySqlQuery::table()`
    * method.
    *
    * @since 1.0.0
@@ -346,21 +367,26 @@ class MySqlQuery extends Query implements QueryInterface {
    * Default: 'inner'.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if one of the
-   * arguments isn't a string.
-   * @throws \RuntimeException if $operator isn't a valid operator or if $type
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
+   * arguments isn't a string or if $operator isn't a valid one, or if $type
    * isn't a valid join type.
    */
   public function join($table, $one, $operator, $two, $type = 'INNER') {
     // Checks on arguments.
     foreach (array('table', 'one', 'operator', 'two', 'type') as $arg)
       if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+        throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
     if (!self::isOperatorValid($operator, 'join'))
-      throw new RuntimeException('Operator passed to `Query::join()` must be a valid operator');
+      throw new InvalidArgumentException(sprintf(
+        'Operator passed to %s() is invalid',
+        __NAMESPACE__.__METHOD__
+      ));
     $type = strtoupper($type);
     if (!in_array($type, array('INNER', 'LEFT', 'RIGHT', 'FULL OUTER')))
-      throw new RuntimeException('Join type passed to `Query::join()` must be a valid join type');
+      throw new InvalidArgumentException(sprintf(
+        'Join type passed to %s() must be a valid join type',
+        __NAMESPACE__.__METHOD__
+      ));
 
     $this->joins[] = array($table, $one, $operator, $two, $type);
     return $this;
@@ -378,14 +404,15 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $two Field of the second table.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if one of the
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
    * arguments isn't a string.
-   * @throws \RuntimeException if $operator isn't a valid operator.
+   * @throws Freyja\Exceptions\RuntimeException if $operator isn't a valid
+   * operator.
    */
   public function leftJoin($table, $one, $operator, $two) {
     try {
       return $this->join($table, $one, $operator, $two, 'LEFT');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -402,14 +429,15 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $two Field of the second table.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if one of the
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
    * arguments isn't a string.
-   * @throws \RuntimeException if $operator isn't a valid operator.
+   * @throws Freyja\Exceptions\RuntimeException if $operator isn't a valid
+   * operator.
    */
   public function rightJoin($table, $one, $operator, $two) {
     try {
       return $this->join($table, $one, $operator, $two, 'RIGHT');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -426,14 +454,15 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $two Field of the second table.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if one of the
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
    * arguments isn't a string.
-   * @throws \RuntimeException if $operator isn't a valid operator.
+   * @throws Freyja\Exceptions\RuntimeException if $operator isn't a valid
+   * operator.
    */
   public function fullOuterJoin($table, $one, $operator, $two) {
     try {
       return $this->join($table, $one, $operator, $two, 'FULL OUTER');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -449,18 +478,19 @@ class MySqlQuery extends Query implements QueryInterface {
    * values: 'asc', 'desc'. Default: 'asc'.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field and
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field and
    * $direction aren't strings.
-   * @throws \RuntimeException if $direction isn't 'ASC' or 'DESC';
+   * @throws Freyja\Exceptions\RuntimeException if $direction isn't 'ASC' or
+   * 'DESC';
    */
   public function orderBy($field, $direction = 'ASC') {
     if (!is_string($field))
-      throw InvArgExcp::typeMismatch('field name', $field, 'String');
+      throw InvalidArgumentException::typeMismatch('field name', $field, 'String');
     if (!is_string($direction))
-      throw InvArgExcp::typeMismatch('direction', $direction, 'String');
+      throw InvalidArgumentException::typeMismatch('direction', $direction, 'String');
     $direction = strtoupper($direction);
     if ($direction != 'ASC' && $direction != 'DESC')
-      throw new RuntimeException('$direction passed to `Query::orderBy()` must be \'ASC\' or \'DESC\'');
+      throw new RuntimeException('$direction passed to `MySqlQuery::orderBy()` must be \'ASC\' or \'DESC\'');
 
     $this->order_by[$field] = $direction;
     return $this;
@@ -475,12 +505,12 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $field Field name.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field isn't a
    * string.
    */
   public function groupBy($field) {
     if (!is_string($field))
-      throw InvArgExcp::typeMismatch('field name', $field, 'String');
+      throw InvalidArgumentException::typeMismatch('field name', $field, 'String');
 
     $this->group_by = $field;
     return $this;
@@ -497,34 +527,32 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param mixed $value Value.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field and
-   * $operator aren't strings.
-   * @throws \RuntimeException if $operator isn't one of the allowed ones, or if
-   * $value isn't in the correct form.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field and
+   * $operator aren't strings, or if $operator isn't one of the allowed ones, or
+   * if $value isn't in the correct form.
    */
   public function having($field, $operator, $value) {
     foreach(array('field', 'operator') as $arg)
       if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+        throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
 
     if (!self::isOperatorValid($operator))
-      throw new RuntimeException('Operator passed to `Query::having()` must be a valid one');
+      throw new InvalidArgumentException(sprintf('Operator passed to %s() is invalid', __NAMESPACE__.__METHOD__));
 
     $operator = strtoupper($operator);
     if (is_array($value) && $operator == 'BETWEEN') {
       if (count($value) != 2)
-        throw new RuntimeException('Value passed to `Query::having()` isn\'t in the correct form');
+        throw new InvalidArgumentException(sprintf('Value passed to %s() is invalid', __NAMESPACE__.__METHOD__));
       try {
-        $value[0] = self::correctValue($value[0], 'having');
-        $value[1] = self::correctValue($value[1], 'having');
-      } catch (Exception $e) {
+        $value = array_map(array(__CLASS__, 'correctValue'), $value);
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
-      $value = $value[0].' AND '.$value[1];
+      $value = join(' AND ', $value);
     } else {
       try {
         $value = self::correctValue($value, 'having');
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     }
@@ -543,14 +571,14 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param int $offset Optional. Specify the OFFSET. Default: null.
    * @return self
    *
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if one of the
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
    * arguments aren't numeric.
    */
   public function limit($limit, $offset = null) {
     if (!is_numeric($limit))
-      throw InvArgExcp::typeMismatch('limit', $limit, 'Numeric');
+      throw InvalidArgumentException::typeMismatch('limit', $limit, 'Numeric');
     if (!is_numeric($offset) && !is_null($offset))
-      throw InvArgExcp::typeMismatch('offset', $offset, 'Numeric or null');
+      throw InvalidArgumentException::typeMismatch('offset', $offset, 'Numeric or null');
 
     $this->limit = $limit;
     $this->offset = $offset;
@@ -560,7 +588,7 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set the query to return only the first row.
    *
-   * It is equivalent to call `Query::limit(1, 0)`. In other words, this method
+   * It is equivalent to call `MySqlQuery::limit(1, 0)`. In other words, this method
    * will perform a `LIMIT 0, 1` in the query.
    *
    * @since 1.0.0
@@ -571,7 +599,7 @@ class MySqlQuery extends Query implements QueryInterface {
   public function first() {
     try {
       return $this->limit(1, 0);
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -594,12 +622,13 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param array|string Where clauses.
    * @return self
    *
-   * @throws \RuntimeException if the arguments aren't in the correct form.
+   * @throws Freyja\Exceptions\RuntimeException if the arguments aren't in the
+   * correct form.
    */
   public function where($clauses) {
     try {
       return $this->processWhere(func_get_args(), 'where');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -608,8 +637,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * Set WHERE clauses.
    *
    * Set where clauses, linking them with the `OR` operator.
-   * The method behave like `Query::where()`.
-   * @see Query::where()
+   * The method behave like `MySqlQuery::where()`.
+   * @see MySqlQuery::where()
    *
    * @since 1.0.0
    * @access public
@@ -617,12 +646,13 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param array|string Where clauses.
    * @return self
    *
-   * @throws \RuntimeException if the arguments aren't in the correct form.
+   * @throws Freyja\Exceptions\RuntimeException if the arguments aren't in the
+   * correct form.
    */
   public function orWhere($clauses) {
     try {
       return $this->processWhere(func_get_args(), 'orWhere');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -639,14 +669,15 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param array $values Values to check with.
    * @return self
    *
-   * @throws \RuntimeException if $value elements aren't in the correct form.
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * @throws Freyja\Exceptions\RuntimeException if $value elements aren't in the
+   * correct form.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field isn't a
    * string.
    */
   public function whereIn($field, array $values) {
     try {
       return $this->processWhereIn($field, $values, 'whereIn');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -663,54 +694,17 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param array $values Values to check with.
    * @return self
    *
-   * @throws \RuntimeException if $value elements aren't in the correct form.
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * @throws Freyja\Exceptions\RuntimeException if $value elements aren't in the
+   * correct form.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field isn't a
    * string.
    */
   public function whereNotIn($field, array $values) {
     try {
       return $this->processWhereIn($field, $values, 'whereNotIn');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
-  }
-
-  /**
-   * Check query result existence.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @return boolean Whether the result is set or not.
-   */
-  public function hasResult() {
-    return isset($this->result);
-  }
-
-  /**
-   * Set query result.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @param mixed $result Query result.
-   */
-  public function setResult($result) {
-    $this->result = $result;
-  }
-
-  /**
-   * Retrieve query result.
-   *
-   * Retrive result(s) of the query. If result isn't set, null will be returned.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @return mixed Query result.
-   */
-  public function getResult() {
-    return $this->result;
   }
 
   /**
@@ -721,26 +715,15 @@ class MySqlQuery extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table property isn't set or if there is some
-   * inconsistency with the data required by every specific method.
+   * @throws Freyja\Exceptions\RuntimeException if $table property isn't set or
+   * if there is some inconsistency with the data required by every specific
+   * method.
    */
   public function build() {
     try {
-      switch ($this->type) {
-        case 'select':
-          return $this->buildSelect();
-          break;
-        case 'update':
-          return $this->buildUpdate();
-          break;
-        case 'insert':
-          return $this->buildInsert();
-          break;
-        case 'delete':
-          return $this->buildDelete();
-          break;
-      }
-    } catch (Exception $e) {
+      $query = 'build'.ucfirst(strtolower($this->type));
+      return $this->{$query}();
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -755,7 +738,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $method Name of the method that called this one.
    * @return self
    *
-   * @throws \RuntimeException if the arguments aren't in the correct form.
+   * @throws Freyja\Exceptions\RuntimeException if the arguments aren't in the
+   * correct form.
    */
   private function processWhere(array $args, $method = 'where') {
     if (is_array($args[0])) {
@@ -764,11 +748,11 @@ class MySqlQuery extends Query implements QueryInterface {
         // Check if the array has other arrays or not, and if it has , then
         // check if every internal array has only scalar inside.
         if (!is_array($clause) || count($clause) < 2 || count($clause) > 3)
-          throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+          throw new RuntimeException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
         $count = 0;
         foreach ($clause as $scalar) {
           if (!is_scalar($scalar) && (!is_array($scalar) || $count != 3))
-            throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+            throw new RuntimeException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
           $count++;
         }
       }
@@ -776,30 +760,30 @@ class MySqlQuery extends Query implements QueryInterface {
       // The array is in the correct form.
       try {
         $this->buildWhereClause($args[0], $method == 'where' ? 'AND' : 'OR');
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     } elseif (is_scalar($args[0])) {
       // Method was called with a list of arguments.
       // Check if the arguments are all scalar, and if they are two or three.
       if (count($args) < 2 || count($args) > 3)
-        throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+        throw new RuntimeException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
         $count = 0;
       foreach ($args as $clause) {
         if (!is_scalar($clause) && (!is_array($clause) || $count != 3))
-          throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+          throw new RuntimeException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
         $count++;
       }
 
       // Arguments are in the correct form.
       try {
         $this->buildWhereClause(array($args), $method == 'where' ? 'AND' : 'OR');
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     } else {
       // Method was called in an incorrect way.
-      throw new RuntimeException('Arguments passed to `Query::'.$method.'()` aren\'t in the correct form');
+      throw new RuntimeException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
     }
 
     return $this;
@@ -818,16 +802,17 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param string $method Name of the method that called this one.
    * @return self
    *
-   * @throws \RuntimeException if $value elements aren't in the correct form.
-   * @throws SqueezyWeb\Exceptions\InvalidArgumentException if $field isn't a
+   * @throws Freyja\Exceptions\RuntimeException if $value elements aren't in the
+   * correct form.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $field isn't a
    * string.
    */
   private function processWhereIn($field, array $values, $method = 'whereIn') {
     if (!is_string($field))
-      throw InvArgExcp::typeMismatch('field name', $field, 'String');
+      throw InvalidArgumentException::typeMismatch('field name', $field, 'String');
 
     $where = $this->where;
-    if ($where != '')
+    if (!empty($where))
       $where = 'WHERE '.$field.' ';
     else
       $where .= ' AND '.$field.' ';
@@ -835,22 +820,8 @@ class MySqlQuery extends Query implements QueryInterface {
       $where .= 'NOT ';
     $where .= 'IN (';
 
-    $count = 0;
-    foreach ($values as $value) {
-      // Correct $value.
-      try {
-        $correct = self::correctValue($value, $method);
-      } catch (Exception $e) {
-        throw $e;
-      }
-
-      // Attach conditions to WHERE clause.
-      if ($count != 0)
-        $where .= ', ';
-      $where .= $correct;
-
-      $count++;
-    }
+    $correct = array_map(array(__CLASS__, 'correctValue'), $values, array_fill(0, count($values), $method));
+    $where .= join(', ', $correct);
 
     $where .= ')';
     $this->where = $where;
@@ -867,7 +838,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param array $clauses `WHERE` clauses.
    * @param string $operator `AND` or `OR`.
    *
-   * @throws \RuntimeException if the arguments aren't in the correct form.
+   * @throws Freyja\Exceptions\RuntimeException if the arguments aren't in the
+   * correct form.
    */
   private function buildWhereClause(array $clauses, $operator) {
     $where = $this->where;
@@ -876,10 +848,10 @@ class MySqlQuery extends Query implements QueryInterface {
     foreach ($clauses as $clause) {
       if (!is_array($clause))
         throw new RuntimeException(
-          'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+          'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
         );
 
-      if ($where != '')
+      if (!empty($where))
         $where = ' '.$operator.' ';
       else
         $where = 'WHERE ';
@@ -892,29 +864,29 @@ class MySqlQuery extends Query implements QueryInterface {
         $oprt = $clause[1];
         if (!self::isOperatorValid($oprt, 'buildWhereClause'))
           throw new RuntimeException(
-            'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+            'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
           );
       }
 
-      if (is_array($value) && ($oprt == 'between' || $oprt == 'BETWEEN')) {
+      $oprt = strtoupper($oprt);
+      if (is_array($value) && $oprt == 'BETWEEN') {
         // Replace the value with a string that contains the values in the
         // array, linked by 'AND'.
         // If the array doesn't contains exactly 2 values, raise an exception.
         if (count($value) != 2)
           throw new RuntimeException(
-            'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
+            'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
           );
         try {
-          $value[0] = self::correctValue($value[0]);
-          $value[1] = self::correctValue($value[1]);
-        } catch (Exception $e) {
+          $value = array_map(array(__CLASS__, 'correctValue'), $value);
+        } catch (ExceptionInterface $e) {
           throw $e;
         }
-        $value = $value[0].' AND '.$value[1];
+        $value = join(' AND ', $value);
       } else {
         try {
           $value = self::correctValue($value, $method);
-        } catch (Exception $e) {
+        } catch (ExceptionInterface $e) {
           throw $e;
         }
       }
@@ -938,7 +910,7 @@ class MySqlQuery extends Query implements QueryInterface {
    * indirectly).
    * @return mixed The correct value.
    *
-   * @throws \RuntimeException if the value is an array.
+   * @throws Freyja\Exceptions\RuntimeException if the value is an array.
    */
   private static function correctValue($value, $method) {
     if (is_string($value)) {
@@ -951,9 +923,14 @@ class MySqlQuery extends Query implements QueryInterface {
       // Replace the value with a string 'TRUE' or 'FALSE' if it is boolean.
       $value = ($value == true) ? 'TRUE' : 'FALSE';
     } elseif (!is_scalar($value)) {
-      throw new RuntimeException(
-        'Arguments passed to `Query::'.$method.'()` aren\'t in the correct form'
-      );
+      $serialized = serialize($value);
+      $unserialized = unserialize($serialized);
+      if ($unserialized != $value);
+        throw new RuntimeException(
+          'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
+        );
+      else
+        $value = $serialized;
     }
     // Any other case (e.g. value is integer) is ok as it is.
     return $value;
@@ -974,11 +951,11 @@ class MySqlQuery extends Query implements QueryInterface {
    */
   private static function isOperatorValid($operator, $method) {
     if ($method == 'join')
-      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'like', 'LIKE');
+      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'LIKE');
     else
-      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'between', 'BETWEEN', 'like', 'LIKE');
+      $valid_operators = array('=', '>', '>=', '<', '<=', '!=', 'BETWEEN', 'LIKE');
 
-    return in_array($operator, $valid_operators);
+    return in_array(strtoupper($operator), $valid_operators);
   }
 
   /**
@@ -989,9 +966,12 @@ class MySqlQuery extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table property isn't set.
+   * @throws Freyja\Exceptions\RuntimeException if $table property isn't set.
    */
   private function buildSelect() {
+    if (!isset($this->table))
+      throw new RuntimeException('Cannot execute the query without a target table');
+
     // Create the `SELECT` part.
     $query = 'SELECT ';
     if (!is_array($this->select) || empty($this->select)) {
@@ -1017,8 +997,6 @@ class MySqlQuery extends Query implements QueryInterface {
 
     // Append the `FROM` part.
     $query .= 'FROM ';
-    if (!isset($this->table))
-      throw new RuntimeException('Cannot execute the query without a target table');
     $query .= $this->table.' ';
 
     // Append the `JOIN` part.
@@ -1051,9 +1029,9 @@ class MySqlQuery extends Query implements QueryInterface {
       if (!empty($this->having)) {
         $query .= sprintf(
           ' HAVING %1$s %2$s %3$s',
-          $this->having[0],
-          $this->having[1],
-          $this->having[2]
+          $this->having[0],               // field
+          $this->having[1],               // operator
+          $this->having[2]                // value
         );
       }
     }
@@ -1081,13 +1059,7 @@ class MySqlQuery extends Query implements QueryInterface {
     if ($this->count == true || empty($this->count)) {
       $part .= 'COUNT(*)';
     } elseif (is_array($this->count)) {
-      $count = 0;
-      foreach ($this->count as $field) {
-        if ($count != 0)
-          $part .= ', ';
-        $part .= 'COUNT('.$field.')';
-        $count++;
-      }
+      $part = 'COUNT('.join(', ', $this->count).')';
     }
 
     return $part;
@@ -1101,27 +1073,24 @@ class MySqlQuery extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table and $update properties aren't set.
+   * @throws Freyja\Exceptions\RuntimeException if $table and $update properties
+   * aren't set.
    */
   private function buildUpdate() {
-    // `UPDATE` part.
     if (!isset($this->table))
       throw new RuntimeException('Cannot execute the query without a target table');
-
-    $query = 'UPDATE '.$this->table.' ';
-
-    // Append `SET` part.
     if (!isset($this->update) || empty($this->update))
       throw new RuntimeException('Cannot execute an UPDATE query without updating anything');
 
+    // `UPDATE` part.
+    $query = 'UPDATE '.$this->table.' ';
+
+    // Append `SET` part.
     $query .= 'SET ';
     $count = 0;
-    foreach ($this->update as $field => $value) {
-      if ($count != 0)
-        $query .= ', ';
-      $query .= $field.' = '.$value;
-      $count++;
-    }
+    $query .= join(', ', array_map(function($field, $value) {
+      return $field.' = '.$value;
+    }, array_keys($this->update), array_values($this->update)));
 
     // Append `WHERE` part.
     $query .= ' '.$this->where;
@@ -1143,7 +1112,8 @@ class MySqlQuery extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table and $insert properties aren't set.
+   * @throws Freyja\Exceptions\RuntimeException if $table and $insert properties
+   * aren't set.
    */
   private function buildInsert() {
     // `INSERT INTO` part.
@@ -1152,21 +1122,12 @@ class MySqlQuery extends Query implements QueryInterface {
     if (!isset($this->insert) || empty($this->insert))
       throw new RuntimeException('Cannot execute an INSERT query without inserting anything');
 
-    $query = 'INSERT INTO '.$this->table.' (';
-
-    // Append fields and values.
-    $values = '';
-    $count = 0;
-    foreach ($this->insert as $field => $value) {
-      if ($count != 0) {
-        $query .= ', ';
-        $values .= ', ';
-      }
-      $query .= $field;
-      $values .= $value;
-      $count++;
-    }
-    $query .= ') VALUES ('.$values.')';
+    $query = sprintf(
+      'INSERT INTO %1$s (%2$s) VALUES (%3$s)',
+      $this->table,
+      join(', ', array_keys($this->insert)),
+      join(', ', array_values($this->insert))
+    );
 
     return $query;
   }
@@ -1179,7 +1140,7 @@ class MySqlQuery extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if $table property isn't set.
+   * @throws Freyja\Exceptions\RuntimeException if $table property isn't set.
    */
   private function buildDelete() {
     // `DELETE` part.
@@ -1209,19 +1170,12 @@ class MySqlQuery extends Query implements QueryInterface {
    * @return string
    */
   private function buildOrderBy() {
-    $part = '';
+    if (empty($this->order_by))
+      return '';
 
-    if (!empty($this->order_by)) {
-      $part .= ' ORDER BY ';
-      $count = 0;
-      foreach ($this->order_by as $field => $direction) {
-        if ($count != 0)
-          $part .= ', ';
-        $part .= $field.$direction;
-      }
-    }
-
-    return $part;
+    return ' ORDER BY '.join(', ', array_map(function($field, $direction) {
+      return $field.' '.$direction;
+    }, array_keys($this->order_by), array_values($this->order_by)));
   }
 
   /**
@@ -1233,15 +1187,13 @@ class MySqlQuery extends Query implements QueryInterface {
    * @return string
    */
   private function buildLimit() {
-    $part = '';
+    if (is_null($this->limit))
+      return '';
 
-    if (isset($this->limit)) {
-      $part .= ' LIMIT ';
-      if (isset($this->offset) && !is_null($this->offset))
-        $part .= $this->offset.', ';
-      $part .= $this->limit;
-    }
-
-    return $part;
+    return sprintf(
+      ' LIMIT %1$s%2$s',
+      $this->offset ? $this->offset.', ' : '',
+      $this->limit
+    )
   }
 }
