@@ -11,8 +11,8 @@
 namespace Freyja\Database;
 use Freyja\Database\Driver;
 use Freyja\Database\Query;
-use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use RuntimeException;
+use Freyja\Exceptions\RuntimeException;
+use Freyja\Exceptions\ExceptionInterface;
 
 /**
  * Database class.
@@ -28,7 +28,7 @@ class Database {
    *
    * @since 1.0.0
    * @access private
-   * @var Driver
+   * @var Freyja\Database\Driver
    */
   private $driver;
 
@@ -47,7 +47,7 @@ class Database {
    *
    * @since 1.0.0
    * @access private
-   * @var Query
+   * @var Freyja\Database\Query
    */
   private $last;
 
@@ -57,7 +57,7 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @param Driver $driver Driver used to execute queries.
+   * @param Freyja\Database\Driver $driver Driver used to execute queries.
    */
   public function __construct(Driver $driver) {
     $this->driver = $driver;
@@ -81,7 +81,7 @@ class Database {
   public function connect($host, $database, $username, $password) {
     try {
       $this->driver->connect($host, $database, $username, $password);
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
 
@@ -109,13 +109,10 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @return Database|boolean Global instance. False if global instance isn't
+   * @return Database Global instance. Null if global instance isn't
    * set.
    */
   public function getGlobal() {
-    if (!isset(self::$global_instance))
-      return false;
-
     return self::$global_instance;
   }
 
@@ -125,10 +122,10 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @return string Driver name (e.g. 'MySql').
+   * @return string Driver name (e.g. 'MySqlDriver').
    */
   public function getDriver() {
-    return $this->driver->getName();
+    return get_class($this->driver);
   }
 
   /**
@@ -139,15 +136,24 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @param Query $query Query to execute.
+   * @param Freyja\Database\Query $query Query to execute.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\RuntimeException if it's raised by
+   * Freyja\Database\Driver::execute().
    */
   public function execute(Query $query) {
     if (!$query->hasResult()) {
-      $result = $this->driver->execute($query);
+      try {
+        $result = $this->driver->execute($query);
+      } catch (Exception $e) {
+        throw $e;
+      }
       $query->setResult($result);
     }
 
     $this->last = $query;
+    return $this;
   }
 
   /**
@@ -160,8 +166,8 @@ class Database {
    *
    * @return mixed Query results.
    *
-   * @throws \RuntimeException if no query was ever executed in this Database
-   * instance.
+   * @throws Freyja\Exceptions\RuntimeException if no query was ever executed in
+   * this Database instance.
    */
   public function get() {
     if (!isset($this->last))
@@ -180,18 +186,18 @@ class Database {
    *
    * @return mixed Query result.
    *
-   * @throws \RuntimeException if no query was ever executed in this Database
-   * instance.
+   * @throws Freyja\Exceptions\RuntimeException if no query was ever executed in
+   * this Database instance.
    */
   public function first() {
     try {
       $result = $this->get();
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
 
     if (is_array($result))
-      $result = $result[0];
+      $result = array_shift($result);
     return $result;
   }
 }
