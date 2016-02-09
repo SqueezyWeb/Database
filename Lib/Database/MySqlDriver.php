@@ -87,8 +87,21 @@ class MySqlDriver implements Driver {
    *
    * @param Query Query that will be executed.
    * @return mixed Query result.
+   *
+   * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
   public function execute(Query $query) {
-    return $this->connection->query($query);
+    $result = $this->connection->query($query);
+
+    // Handle query errors.
+    if (!$result)
+      throw new RuntimeException(sprintf(
+        'Query failed. Error (%d): %s',
+        $this->connection->errno,
+        $this->connection->error
+      ));
+
+    // Query successful.
+    return $result;
   }
 }

@@ -54,6 +54,8 @@ interface Driver {
    *
    * @param Freyja\Database\Query Query that will be executed.
    * @return mixed Query result.
+   *
+   * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
   public function execute(Query $query);
 }
