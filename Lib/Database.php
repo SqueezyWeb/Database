@@ -9,8 +9,8 @@
  */
 
 namespace Freyja\Database;
-use Freyja\Database\Driver;
-use Freyja\Database\Query;
+use Freyja\Database\Driver\Driver;
+use Freyja\Database\Query\Query;
 use Freyja\Exceptions\RuntimeException;
 use Freyja\Exceptions\ExceptionInterface;
 
@@ -28,7 +28,7 @@ class Database {
    *
    * @since 1.0.0
    * @access private
-   * @var Freyja\Database\Driver
+   * @var Freyja\Database\Driver\Driver
    */
   private $driver;
 
@@ -47,7 +47,7 @@ class Database {
    *
    * @since 1.0.0
    * @access private
-   * @var Freyja\Database\Query
+   * @var Freyja\Database\Query\Query
    */
   private $last;
 
@@ -57,7 +57,8 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @param Freyja\Database\Driver $driver Driver used to execute queries.
+   * @param Freyja\Database\Driver\Driver $driver Driver used to execute
+   * queries.
    */
   public function __construct(Driver $driver) {
     $this->driver = $driver;
@@ -136,7 +137,7 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @param Freyja\Database\Query $query Query to execute.
+   * @param Freyja\Database\Query\Query $query Query to execute.
    * @return self
    *
    * @throws Freyja\Exceptions\RuntimeException if it's raised by

@@ -2,23 +2,23 @@
 /**
  * MySqlDriver class file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Driver;
 
 use Freyja\Exceptions\InvalidArgumentException;
 use Freyja\Exceptions\RuntimeException;
-use Freyja\Database\Query;
+use Freyja\Database\Query\Query;
 use mysqli;
 
 /**
  * MySqlDriver class.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
@@ -85,7 +85,7 @@ class MySqlDriver implements Driver {
    * @since 1.0.0
    * @access public
    *
-   * @param Query Query that will be executed.
+   * @param Freyja\Database\Query\Query Query that will be executed.
    * @return mixed Query result.
    *
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.

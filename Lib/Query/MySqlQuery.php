@@ -2,12 +2,12 @@
 /**
  * MySqlQuery class file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @copyright 2016 SqueezyWeb
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Query;
 
 use Freyja\Exceptions\InvalidArgumentException;
 use Freyja\Exceptions\RuntimeException;
@@ -16,7 +16,7 @@ use Freyja\Exceptions\ExceptionInterface;
 /**
  * MySqlQuery class.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
@@ -319,8 +319,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set a DELETE query.
    *
-   * If clause is set through the method `MySqlQuery::where()`, all rows of the table
-   * will be affected.
+   * If clause is set through the method `MySqlQuery::where()`, all rows of the
+   * table will be affected.
    *
    * @since 1.0.0
    * @access public
@@ -353,8 +353,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * JOIN tables.
    *
    * JOIN two tables. Second table of the JOIN will be the first argument of
-   * this method. The first one will be the one set with the `MySqlQuery::table()`
-   * method.
+   * this method. The first one will be the one set with the
+   * `MySqlQuery::table()` method.
    *
    * @since 1.0.0
    * @access public
@@ -475,8 +475,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @access public
    *
    * @param string $field Field name.
-   * @param string $direction Optional. Set the direction of the sort. Permitted
-   * values: 'asc', 'desc'. Default: 'asc'.
+   * @param string $direction Optional. Set the direction of the sort. Allowed
+   * values: 'ASC', 'DESC'. Default: 'ASC'.
    * @return self
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if $field and
@@ -576,8 +576,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param int $offset Optional. Specify the OFFSET. Default: null.
    * @return self
    *
-   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
-   * arguments aren't numeric.
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the arguments
+   * aren't numeric.
    */
   public function limit($limit, $offset = null) {
     if (!is_numeric($limit))
@@ -593,8 +593,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set the query to return only the first row.
    *
-   * It is equivalent to call `MySqlQuery::limit(1, 0)`. In other words, this method
-   * will perform a `LIMIT 0, 1` in the query.
+   * It is equivalent to call `MySqlQuery::limit(1, 0)`. In other words, this
+   * method will perform a `LIMIT 0, 1` in the query.
    *
    * @since 1.0.0
    * @access public
