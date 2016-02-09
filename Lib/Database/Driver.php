@@ -20,16 +20,6 @@ namespace Freyja\Database;
  */
 interface Driver {
   /**
-   * Class constructor.
-   *
-   * Set the Driver name.
-   *
-   * @since 1.0.0
-   * @access public
-   */
-  public function __construct();
-
-  /**
    * Connect to database.
    *
    * @since 1.0.0
@@ -42,6 +32,7 @@ interface Driver {
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if one of the arguments
    * isn't a string.
+   * @throws Freyja\Exceptions\RuntimeException if the connection has an error.
    */
   public function connect($host, $database, $username, $password);
 
@@ -61,7 +52,7 @@ interface Driver {
    * @since 1.0.0
    * @access public
    *
-   * @param Query Query that will be executed.
+   * @param Freyja\Database\Query Query that will be executed.
    * @return mixed Query result.
    */
   public function execute(Query $query);

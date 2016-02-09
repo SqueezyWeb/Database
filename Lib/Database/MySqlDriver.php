@@ -10,7 +10,8 @@
 
 namespace Freyja\Database;
 
-use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
+use Freyja\Exceptions\InvalidArgumentException;
+use Freyja\Exceptions\RuntimeException;
 use Freyja\Database\Query;
 use mysqli;
 
@@ -24,15 +25,6 @@ use mysqli;
  */
 class MySqlDriver implements Driver {
   /**
-   * Driver name.
-   *
-   * @since 1.0.0
-   * @access private
-   * @var string
-   */
-  private $name;
-
-  /**
    * Connection object.
    *
    * @since 1.0.0
@@ -40,18 +32,6 @@ class MySqlDriver implements Driver {
    * @var \mysqli
    */
   private $connection;
-
-  /**
-   * Class constructor.
-   *
-   * Set the Driver name.
-   *
-   * @since 1.0.0
-   * @access public
-   */
-  public function __construct() {
-    $this->name = 'MySql';
-  }
 
   /**
    * Connect to database.
@@ -66,13 +46,25 @@ class MySqlDriver implements Driver {
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if one of the arguments
    * isn't a string.
+   * @throws Freyja\Exceptions\RuntimeException if the connection has an error.
    */
   public function connect($host, $database, $username, $password) {
     foreach (array('host', 'database', 'username', 'password') as $arg)
       if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+        throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
 
-    $this->connection = new mysqli($host, $username, $password, $database);
+    $connection = new mysqli($host, $username, $password, $database);
+
+    // Handle connection errors.
+    if ($connection->connect_error)
+      throw new RuntimeException(sprintf(
+        'Error while connecting to MySql Server ($d): %s',
+        $connection->connect_errno,
+        $connection->connect_error
+      ));
+
+    // Connection successful.
+    $this->connection = $connection;
   }
 
   /**
@@ -84,7 +76,7 @@ class MySqlDriver implements Driver {
    * @return string Driver name.
    */
   public function getName() {
-    return $this->name;
+    return get_class();
   }
 
   /**
