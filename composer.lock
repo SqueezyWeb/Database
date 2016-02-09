@@ -4,27 +4,27 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "18d628cd0b35f79d3bfc4c636867c23f",
-    "content-hash": "5a7072bb105b9a0f8a89f16a6ce4d751",
+    "hash": "fb5d08efe27bae7c1c97567675079635",
+    "content-hash": "cb70b083ea23d0b7a66abc4ca7efc7d5",
     "packages": [
         {
-            "name": "squeezyweb/exceptions",
-            "version": "v1.0.0",
+            "name": "freyja/exceptions",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SqueezyWeb/Exceptions.git",
-                "reference": "b2ed4ed65f5b870f4e181236c1aa1cf3357c0743"
+                "reference": "1239ac6378601eb24f68d95dda0090f9dfa28bf9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SqueezyWeb/Exceptions/zipball/b2ed4ed65f5b870f4e181236c1aa1cf3357c0743",
-                "reference": "b2ed4ed65f5b870f4e181236c1aa1cf3357c0743",
+                "url": "https://api.github.com/repos/SqueezyWeb/Exceptions/zipball/1239ac6378601eb24f68d95dda0090f9dfa28bf9",
+                "reference": "1239ac6378601eb24f68d95dda0090f9dfa28bf9",
                 "shasum": ""
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "SqueezyWeb\\Exceptions\\": "Lib"
+                    "Freyja\\Exceptions\\": "Lib"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -38,7 +38,7 @@
                 }
             ],
             "description": "Simple library of exceptions.",
-            "time": "2016-02-01 09:55:10"
+            "time": "2016-02-02 17:15:18"
         }
     ],
     "packages-dev": [],
