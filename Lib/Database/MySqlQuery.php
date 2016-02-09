@@ -378,7 +378,8 @@ class MySqlQuery extends Query implements QueryInterface {
         throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
     if (!self::isOperatorValid($operator, 'join'))
       throw new InvalidArgumentException(sprintf(
-        'Operator passed to %s() is invalid',
+        'Operator %1$s passed to %2$s() is invalid',
+        $operator,
         __NAMESPACE__.__METHOD__
       ));
     $type = strtoupper($type);
@@ -537,7 +538,11 @@ class MySqlQuery extends Query implements QueryInterface {
         throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
 
     if (!self::isOperatorValid($operator))
-      throw new InvalidArgumentException(sprintf('Operator passed to %s() is invalid', __NAMESPACE__.__METHOD__));
+      throw new InvalidArgumentException(sprintf(
+        'Operator %1$s passed to %2$s() is invalid',
+        $operator,
+        __NAMESPACE__.__METHOD__
+      ));
 
     $operator = strtoupper($operator);
     if (is_array($value) && $operator == 'BETWEEN') {
