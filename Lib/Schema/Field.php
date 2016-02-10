@@ -12,6 +12,7 @@ namespace Freyja\Database\Schema;
 use Freyja\Exceptions\InvalidArgumentException;
 use Freyja\Exceptions\RuntimeException;
 use Freyja\Exceptions\LogicException;
+use Freyja\log\LoggerInterface;
 
 /**
  * Field class.
@@ -122,6 +123,15 @@ class Field {
   );
 
   /**
+   * Logger object.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var Freyja\Log\LoggerInterface
+   */
+  private $logger;
+
+  /**
    * Data type constants.
    *
    * @since 1.0.0
@@ -166,14 +176,20 @@ class Field {
    * @access public
    *
    * @param string $name Field name.
+   * @param Freyja\Log\LoggerInterface $logger Optional. Logger object.
+   * Default null.
    *
-   * @throws Freyja\Exceptions\InvalidArgumentException if $name isn't a string.
+   * @throws Freyja\Exceptions\InvalidArgumentException if $name isn't a string
+   * or if $logger isn't a Freyja\Log\LoggerInterface or null.
    */
-  public function __construct($name) {
+  public function __construct($name, $logger = null) {
     if (!is_string($name))
       throw InvalidArgumentException::typeMismatch('name', $name, 'String');
+    if (!is_a($logger, 'Freyja\Log\LoggerInterface') && !is_null($logger))
+      throw InvalidArgumentException::typeMismatch('logger', $logger, 'Freyja\Log\LoggerInterface or null');
 
     $this->name = $name;
+    $this->logger = $logger;
   }
 
   /**

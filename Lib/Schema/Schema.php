@@ -55,6 +55,15 @@ class Schema {
   private $filename;
 
   /**
+   * Logger object.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var Freyja\Log\LoggerInterface
+   */
+  private $logger;
+
+  /**
    * Class constructor.
    *
    * The Database argument MUST be connected before passing it to the
@@ -64,9 +73,18 @@ class Schema {
    * @access public
    *
    * @param Freyja\Database\Database $database
+   * @param Freyja\Log\LoggerInterface $logger Optional. Logger object.
+   * Default null.
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if $logger isn't a
+   * Freyja\Log\LoggerInterface or null.
    */
-  public function __construct(Database $database) {
+  public function __construct(Database $database, $logger = null) {
+    if (!is_a($logger, 'Freyja\log\LoggerInterface') && !is_null($logger))
+      throw InvalidArgumentException::typeMismatch('logger', $logger, 'Freyja\Log\LoggerInterface or null');
+
     $this->database = $database;
+    $this->logger = $logger;
 
     $this->filename = getcwd().'/db/schema.yml';
     if (file_exists($this->filename)) {
