@@ -73,18 +73,9 @@ class Schema {
    * @access public
    *
    * @param Freyja\Database\Database $database
-   * @param Freyja\Log\LoggerInterface $logger Optional. Logger object.
-   * Default null.
-   *
-   * @throws Freyja\Exceptions\InvalidArgumentException if $logger isn't a
-   * Freyja\Log\LoggerInterface or null.
    */
-  public function __construct(Database $database, $logger = null) {
-    if (!is_a($logger, 'Freyja\log\LoggerInterface') && !is_null($logger))
-      throw InvalidArgumentException::typeMismatch('logger', $logger, 'Freyja\Log\LoggerInterface or null');
-
+  public function __construct(Database $database) {
     $this->database = $database;
-    $this->logger = $logger;
 
     $this->filename = getcwd().'/db/schema.yml';
     if (file_exists($this->filename)) {
@@ -189,14 +180,10 @@ class Schema {
     if (!$this->hasTable($table)) {
       // TODO: send notice, and log to file, that table doesn't exists.
     } else {
-      // Table exists, alter it.
       try {
+        // Table exists, alter it.
         $this->database->execute($table);
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-      // Query ok, update schema property.
-      try {
+        // Query ok (if no exception was raised), update schema property.
         $alteration = $table->getAlteration();
       } catch (ExceptionInterface $e) {
         throw $e;
