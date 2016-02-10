@@ -11,7 +11,9 @@
     ],
     "minimum-stability": "dev",
     "require": {
-      "Freyja/Exceptions": "~2.0.0"
+      "Freyja/Exceptions": "~2.0.0",
+      "monolog/monolog": "1.16.0",
+      "theorchard/monolog-cascade": "0.3.0"
     },
     "autoload": {
       "psr-4": {
