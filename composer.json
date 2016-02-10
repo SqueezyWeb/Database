@@ -13,6 +13,9 @@
     "require": {
       "Freyja/Exceptions": "~2.0.0"
     },
+    "require-dev": {
+      "phpunit/phpunit": "4.8.*"
+    },
     "autoload": {
       "psr-4": {
         "Freyja\\Database\\": "Lib"
