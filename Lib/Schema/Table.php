@@ -9,11 +9,12 @@
 
 namespace Freyja\Database\Schema;
 
-use Freyja\Database\Query;
-use Freyja\Database\QueryInterface;
+use Freyja\Database\Query\Query;
+use Freyja\Database\Query\QueryInterface;
 use Freyja\Database\Schema\Field;
-use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use LogicException;
+use Freyja\Exceptions\InvalidArgumentException;
+use Freyja\Exceptions\LogicException;
+use Freyja\Exceptions\ExceptionInterface;
 
 /**
  * Table class.
@@ -146,10 +147,10 @@ class Table extends Query implements QueryInterface {
   public function __construct($name, array $fields = array(), $charset = 'utf8', $collation = 'utf8_unicode_ci', $engine = 'InnoDB') {
     foreach (array('name', 'charset', 'collation', 'engine') as $arg)
       if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+        throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
     foreach ($fields as $field) {
       if (!is_a($field, 'Freyja\Database\Schema\Field'))
-        throw InvArgExcp::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
+        throw InvalidArgumentException::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
       $this->fields[$field->getName()] = $field;
     }
 
@@ -177,22 +178,23 @@ class Table extends Query implements QueryInterface {
    * elements if it is an array, aren't strings, or if $name isn't a string or
    * null, or if field name(s) doesn't match any field name saved in the
    * object's property.
-   * @throws \LogicException if $field is an array and $name is null.
+   * @throws Freyja\Exceptions\LogicException if $field is an array and $name is
+   * null.
    */
   public function primaryKey($field, $name = null) {
     if (!is_string($field) && !is_array($field))
-      throw InvArgExcp::typeMismatch('field name(s)', $field, 'Array or String');
+      throw InvalidArgumentException::typeMismatch('field name(s)', $field, 'Array or String');
     if (!is_string($name) && !is_null($name))
-      throw InvArgExcp::typeMismatch('key name', $name, 'String or null');
+      throw InvalidArgumentException::typeMismatch('key name', $name, 'String or null');
 
     if (is_array($field)) {
       if (is_null($name))
         throw new LogicException('Setting more than one field as primary key requires a name to be set for that key');
       foreach ($field as $f) {
         if(!is_string($f))
-          throw InvArgExcp::typeMismatch('field name', $f, 'String');
+          throw InvalidArgumentException::typeMismatch('field name', $f, 'String');
         if (!array_key_exists($f, $this->fields))
-          throw new InvArgExcp('Field name(s) passed to `Table::primaryKey()` must match the fields of the table');
+          throw new InvalidArgumentException('Field name(s) passed to `Table::primaryKey()` must match the fields of the table');
       }
     } else {
       $field = array($field);
@@ -220,7 +222,7 @@ class Table extends Query implements QueryInterface {
   public function foreignKey($field, $table, $referenced_field) {
     foreach (array('field', 'table', 'referenced_field') as $arg)
       if (!is_string($$arg))
-        throw InvArgExcp::typeMismatch($arg, $$arg, 'String');
+        throw InvalidArgumentException::typeMismatch($arg, $$arg, 'String');
     if (!array_key_exists($field, $this->fields))
       throw new InvalidArgumentException('Cannot set a foreign key on a non existing field');
 
@@ -263,7 +265,7 @@ class Table extends Query implements QueryInterface {
    *
    * @return array Table information.
    *
-   * @throws \RuntimeException The one possibly raised by
+   * @throws Freyja\Exceptions\RuntimeException The one possibly raised by
    * Freyja\Database\Schema\Field::getField().
    */
   public function getTable() {
@@ -277,7 +279,7 @@ class Table extends Query implements QueryInterface {
     foreach ($this->fields as $field) {
       try {
         $fields = array_merge($fields, $field->getField());
-      } catch (Exception $e) {
+      } catch (ExceptionInterface $e) {
         throw $e;
       }
     }
@@ -306,7 +308,7 @@ class Table extends Query implements QueryInterface {
    * the alteration (e.g. 'ADD') and `value` is an array of arrays, exactly as
    * they are outputed from `Freyja\Database\Schema\Field::getField()`.
    *
-   * @throws \RuntimeException if raised by the method
+   * @throws Freyja\Exceptions\RuntimeException if raised by the method
    * `Freyja\Database\Schema\Field::getField()`.
    */
   public function getAlteration() {
@@ -316,7 +318,7 @@ class Table extends Query implements QueryInterface {
       foreach ($fields as $field) {
         try {
           $single_type_alteration = array_merge($single_type_alteration, $field->getField());
-        } catch (Exception $e) {
+        } catch (ExceptionInterface $e) {
           throw $e;
         }
       }
@@ -349,12 +351,13 @@ class Table extends Query implements QueryInterface {
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if it is raised by the
    * method `Table::alter()`.
-   * @throws \LogicException if it is raised by the method `Table::alter()`.
+   * @throws Freyja\Exceptions\LogicException if it is raised by the method
+   * `Table::alter()`.
    */
   public function addFields(array $fields) {
     try {
       return $this->alter($fields, 'ADD');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -370,12 +373,13 @@ class Table extends Query implements QueryInterface {
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if it is raised by the
    * method `Table::alter()`.
-   * @throws \LogicException if it is raised by the method `Table::alter()`.
+   * @throws Freyja\Exceptions\LogicException if it is raised by the method
+   * `Table::alter()`.
    */
   public function removeFields(array $fields) {
     try {
       return $this->alter($fields, 'DROP COLUMN');
-    } catch (Exception $e) {
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
   }
@@ -388,26 +392,53 @@ class Table extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if it is raised by the methods called.
-   * @throws \LogicException if it is raised by the methods called.
+   * @throws Freyja\Exceptions\RuntimeException if it is raised by the methods
+   * called.
+   * @throws Freyja\Exceptions\LogicException if it is raised by the methods
+   * called.
    * @see Freyja\Database\Schema\Table::buildCreate()
    */
   public function build() {
     try {
-      switch ($this->type) {
-        case 'create':
-          return $this->buildCreate();
-          break;
-        case 'drop':
-          return $this->buildDrop();
-          break;
-        case 'alter':
-          return $this->buildAlter();
-          break;
-      }
-    } catch (Exception $e) {
+      return $this->{'build'.ucfirst(strtolower($this->type))}();
+    } catch (ExceptionInterface $e) {
       throw $e;
     }
+  }
+
+  /**
+   * Build single field.
+   *
+   * This method is used by `Freyja\Database\Schema\Table::buildCreate()` and
+   * uses a property initialized in that method, therefore you SHOULD NOT use
+   * this method alone. Using this method alone will be the same of casting the
+   * Field to a string.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param Freyja\Database\Schema\Field $field
+   * @return string
+   *
+   * @throws Freyja\Exceptions\LogicException if AUTO_INCREMENT is set on more
+   * than one field, or in a non primary key field.
+   */
+  public function buildField(Field $field) {
+    if (isset($this->autoinc_field)) {
+      if ($field->isAutoIncrement()) {
+        if ($this->autoinc_field == true) {
+          unset($this->autoinc_field);
+          throw new LogicException('AUTO_INCREMENT cannot be set on more than one field');
+        }
+        if (!in_array($field->getName(), $this->primary_keys)) {
+          unset($this->autoinc_field);
+          throw new LogicException('AUTO_INCREMENT cannot be set on a field that isn\'t primary key');
+        }
+        $this->autoinc_field = true;
+      }
+    }
+
+    return (string) $field;
   }
 
   /**
@@ -423,14 +454,14 @@ class Table extends Query implements QueryInterface {
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if some element in
    * $fields isn't a Freyja\Database\Schema\Field object.
-   * @throws \LogicException if $fields is an empty array.
+   * @throws Freyja\Exceptions\LogicException if $fields is an empty array.
    */
   private function alter(array $fields, $type) {
     if (empty($fields))
       throw new LogicException('It\'s required at least one column to alter the table');
     foreach ($fields as $field)
       if (!is_a($field, 'Freyja\Database\Schema\Field'))
-        throw InvArgExcp::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
+        throw InvalidArgumentException::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
 
     $this->type = 'alter';
     $this->alter_fields[$type] = array_merge($this->alter_fields, $fields);
@@ -445,71 +476,34 @@ class Table extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if it is raised by the Field method called.
+   * @throws Freyja\Exceptions\RuntimeException if it is raised by the Field
+   * method called.
    * @see Freyja\Database\Schema\Field::getField()
-   * @throws \LogicException if AUTO_INCREMENT is set on more than one field, or
-   * in a non primary key field, or if $fields property is an empty array.
+   * @throws Freyja\Exceptions\LogicException if AUTO_INCREMENT is set on more
+   * than one field, or in a non primary key field, or if $fields property is an
+   * empty array.
    */
   private function buildCreate() {
     $query = 'CREATE TABLE IF NOT EXISTS '.$this->name.' (';
 
-    $count = 0;
     $autoinc_fields = 0;
     if (empty($fields))
       throw new LogicException('A table must have at least 1 column');
-    foreach ($this->fields as $field) {
-      if ($count != 0)
-        $query .= ', ';
-
-      try {
-        $field_info = $field->getField();
-      } catch (Exception $e) {
-        throw $e;
-      }
-      $field_name = key($field_info);
-      $info = $field_info[$field_name];
-
-      // Append field name and type.
-      $query .= $field_name.' '.$info['type'];
-
-      // Append default value, if set.
-      if (!is_null($info['default']))
-        $query .= ' DEFAULT '.$info['default'];
-
-      // Append NOT NULL, if true.
-      if ($info['NOT NULL'])
-        $query .= ' NOT NULL';
-
-      // Append UNSIGNED, if true.
-      if ($info['UNSIGNED'])
-        $query .= ' UNSIGNED';
-
-      // Append AUTO_INCREMENT, if true.
-      if ($info['AUTO_INCREMENT']) {
-        if ($autoinc_fields > 0)
-          throw new LogicException('AUTO_INCREMENT cannot be set on more than one field');
-        if (!in_array($info['name'], $this->primary_keys))
-          throw new LogicException('AUTO_INCREMENT cannot be set on a field that isn\'t primary key');
-
-        $query .= ' AUTO_INCREMENT';
-      }
+    try {
+      $this->autoinc_field = false;
+      $query .= join(', ', array_map(array($this, 'buildField'), $this->fields));
+      unset($this->autoinc_field);
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
 
     // Append the PRIMARY KEY constraint, if set.
-    if (!empty($this->primary_keys)) {
-      $key_fields = '';
-      $count = 0;
-      foreach ($this->primary_keys as $key) {
-        if ($count != 0)
-          $key_fields .= ',';
-        $key_fields .= $key;
-      }
+    if (!empty($this->primary_keys))
       $query .= sprintf(
         ', CONSTRAINT %1$s PRIMARY KEY (%2$s)',
         $this->primary_name,
-        $key_fields
+        join(',', $this->primary_keys)
       );
-    }
 
     // Append the FOREIGN KEY constraints, if set.
     foreach ($this->foreign_keys as $key) {
@@ -557,44 +551,42 @@ class Table extends Query implements QueryInterface {
    *
    * @return string
    *
-   * @throws \RuntimeException if it is raised by the Field method called.
+   * @throws Freyja\Exceptions\RuntimeException if it is raised by the Field
+   * method called.
    * @see Freyja\Database\Schema\Field::getField()
    */
   private function buildAlter() {
-    $query = sprintf('ALTER TABLE %s', $this->name);
+    $query = sprintf('ALTER TABLE %s ', $this->name);
 
-    $count = 0;
-    foreach ($this->alter_fields as $type => $fields) {
-      foreach ($fields as $field) {
-        if ($count != 0)
-          $query .= ', ';
-        try {
-          $info = $field->getField();
-        } catch (Exception $e) {
-          throw $e;
-        }
-        $field_name = $field->getName();
-        $query .= sprintf(
-          '%1$s %2$s',
-          $type,
-          $field_name;
-        );
+    try {
+      foreach ($this->alter_fields as $type => $fields) {
+        $query .= join(', ', array_map(function($type, $field) {
+          $part = '';
+          $field_info = $field->getField();
+          $field_name = $field->getName();
+          $part .= sprintf(
+            '%1$s %2$s',
+            $type,
+            $field_name;
+          );
 
-        // Prepare string based on the type of the alteration.
-        // The switch is useless at the moment, but it's here in anticipation of
-        // future additions.
-        switch ($type) {
-          case 'ADD':
-            $query .= ' '.$info[$field_name]['type'];
-            if (!is_null($info[$field_name]['default']))
-              $query .= ' DEFAULT '.$info[$field_name]['default'];
-            if ($info[$field_name]['NOT NULL'])
-              $query .= ' NOT NULL';
-            break;
-        }
-
-        $count++;
+          // Prepare string based on the type of the alteration.
+          // The switch is useless at the moment, but it's here in anticipation of
+          // future additions.
+          switch ($type) {
+            case 'ADD':
+              $part .= ' '.$field_info[$field_name]['type'];
+              if (!is_null($field_info[$field_name]['default']))
+                $part .= ' DEFAULT '.$field_info[$field_name]['default'];
+              if ($field_info[$field_name]['NOT NULL'])
+                $part .= ' NOT NULL';
+              break;
+          }
+          return $part;
+        }, array_fill(0, count($fields), $type), array_values($fields)));
       }
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
 
     $query .= ';';

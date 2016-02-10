@@ -9,9 +9,9 @@
 
 namespace Freyja\Database\Schema;
 
-use Freyja\Exceptions\InvalidArgumentException as InvArgExcp;
-use RuntimeException;
-use LogicException;
+use Freyja\Exceptions\InvalidArgumentException;
+use Freyja\Exceptions\RuntimeException;
+use Freyja\Exceptions\LogicException;
 
 /**
  * Field class.
@@ -102,18 +102,20 @@ class Field {
   private $auto_increment = false;
 
   /**
-   * Types that can be UNSIGNED and AUTO_INCREMENT.
+   * Numeric types.
+   *
+   * Numeric types, the only ones that can be UNSIGNED and AUTO_INCREMENT.
    *
    * @since 1.0.0
    * @access private
    * @var array
    */
-  private $allowed = array(
+  private $numeric_types = array(
     self::INT,
-    self::TINY_INT,
-    self::SMALL_INT,
-    self::MEDIUM_INT,
-    self::BIG_INT,
+    self::TINYINT,
+    self::SMALLINT,
+    self::MEDIUMINT,
+    self::BIGINT,
     self::FLOAT,
     self::DOUBLE,
     self::DECIMAL
@@ -128,10 +130,10 @@ class Field {
    */
   // Numeric types.
   const INT = 'INT';
-  const TINY_INT = 'TINYINT';
-  const SMALL_INT = 'SMALLINT';
-  const MEDIUM_INT = 'MEDIUMINT';
-  const BIG_INT = 'BIGINT';
+  const TINYINT = 'TINYINT';
+  const SMALLINT = 'SMALLINT';
+  const MEDIUMINT = 'MEDIUMINT';
+  const BIGINT = 'BIGINT';
   const FLOAT = 'FLOAT';
   const DOUBLE = 'DOUBLE';
   const DECIMAL = 'DECIMAL';
@@ -144,9 +146,9 @@ class Field {
   const CHAR = 'CHAR';
   const VARCHAR = 'VARCHAR';
   const TEXT = 'TEXT';
-  const TINY_TEXT = 'TINYTEXT';
-  const MEDIUM_TEXT = 'MEDIUMTEXT';
-  const LONG_TEXT = 'LONGTEXT';
+  const TINYTEXT = 'TINYTEXT';
+  const MEDIUMTEXT = 'MEDIUMTEXT';
+  const LONGTEXT = 'LONGTEXT';
 
   /**
    * Null value constant.
@@ -169,7 +171,7 @@ class Field {
    */
   public function __construct($name) {
     if (!is_string($name))
-      throw InvArgExcp::typeMismatch('field name', $name, 'String');
+      throw InvalidArgumentException::typeMismatch('name', $name, 'String');
 
     $this->name = $name;
   }
@@ -198,7 +200,7 @@ class Field {
    * @return self
    */
   public function tinyInteger($length = 4) {
-    $this->setIntegerType(self::TINY_INT, $length, 4);
+    $this->setIntegerType(self::TINYINT, $length, 4);
     return $this;
   }
 
@@ -212,7 +214,7 @@ class Field {
    * @return self
    */
   public function smallInteger($length = 5) {
-    $this->setIntegerType(self::SMALL_INT, $length, 5);
+    $this->setIntegerType(self::SMALLINT, $length, 5);
     return $this;
   }
 
@@ -226,7 +228,7 @@ class Field {
    * @return self
    */
   public function mediumInteger($length = 9) {
-    $this->setIntegerType(self::MEDIUM_INT, $length, 9);
+    $this->setIntegerType(self::MEDIUMINT, $length, 9);
     return $this;
   }
 
@@ -240,7 +242,7 @@ class Field {
    * @return self
    */
   public function bigInteger($length = 20) {
-    $this->setIntegerType(self::BIG_INT, $length, 20);
+    $this->setIntegerType(self::BIGINT, $length, 20);
     return $this;
   }
 
@@ -391,7 +393,7 @@ class Field {
    * @return self
    */
   public function tinyText() {
-    $this->type = self::TINY_TEXT;
+    $this->type = self::TINYTEXT;
     return $this;
   }
 
@@ -404,7 +406,7 @@ class Field {
    * @return self
    */
   public function mediumText() {
-    $this->type = self::MEDIUM_TEXT;
+    $this->type = self::MEDIUMTEXT;
     return $this;
   }
 
@@ -417,7 +419,7 @@ class Field {
    * @return self
    */
   public function longText() {
-    $this->type = self::LONG_TEXT;
+    $this->type = self::LONGTEXT;
     return $this;
   }
 
@@ -434,7 +436,7 @@ class Field {
    * Default `self::NULL`.
    * @return self
    *
-   * @throws \LogicException if the field is set to NOT NULL.
+   * @throws Freyja\Exceptions\LogicException if the field is set to NOT NULL.
    * @throws Freyja\Exceptions\InvalidArgumentException if $value isn't a
    * scalar.
    */
@@ -443,7 +445,7 @@ class Field {
       throw new LogicException('Cannot set default value to NULL if the field is NOT NULL');
 
     if (!is_scalar($value))
-      throw InvArgExcp::typeMismatch('default value', $value, 'Scalar');
+      throw InvalidArgumentException::typeMismatch('default value', $value, 'Scalar');
 
     if (is_string($value) && $value != self::NULL)
       $this->default = "'".$value."'";
@@ -463,7 +465,7 @@ class Field {
    *
    * @return self
    *
-   * @throws \LogicException if default value is set to NULL.
+   * @throws Freyja\Exceptions\LogicException if default value is set to NULL.
    */
   public function notNull() {
     if ($this->default == self::NULL)
@@ -481,7 +483,8 @@ class Field {
    *
    * @return self
    *
-   * @throws \LogicException if the field type is not allowed to be UNSIGNED.
+   * @throws Freyja\Exceptions\LogicException if the field type is not allowed
+   * to be UNSIGNED.
    */
   public function unsigned() {
     if (!isset($this->type) || !in_array($this->type, $this->allowed))
@@ -499,8 +502,8 @@ class Field {
    *
    * @return self
    *
-   * @throws \LogicException if the field type is not allowed to be
-   * AUTO_INCREMENT.
+   * @throws Freyja\Exceptions\LogicException if the field type is not allowed
+   * to be AUTO_INCREMENT.
    */
   public function autoIncrement() {
     if (!isset($this->type) || !in_array($this->type, $this->allowed))
@@ -539,35 +542,16 @@ class Field {
    *
    * @return array Field information.
    *
-   * @throws \RuntimeException if field type isn't set.
+   * @throws Freyja\Exceptions\RuntimeException if field type isn't set.
    */
   public function getField() {
-    if (!isset($this->type))
-      throw new RuntimeException('Field type isn\'t set');
-
     $info = array();
 
     // Attach $length and $decimals to the type if necessary.
-    $type = $this->type;
-    switch ($this->type) {
-      case self::INT:
-      case self::TINY_INT:
-      case self::SMALL_INT:
-      case self::MEDIUM_INT:
-      case self::BIG_INT:
-      case self::CHAR:
-      case self::VARCHAR:
-        $type .= '('.$this->length.')';
-        break;
-      case self::FLOAT:
-      case self::DOUBLE:
-      case self::DECIMAL:
-        $type .= sprintf(
-          '(%1$s,%2$s)',
-          $this->length,
-          $this->decimals
-        );
-        break;
+    try {
+      $type = $this->getTypeString();
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
 
     // Push the type of the field in the array.
@@ -592,6 +576,84 @@ class Field {
   }
 
   /**
+   * Convert Field object to string.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string
+   *
+   * @throws Freyja\Exceptions\RuntimeException if field type isn't set.
+   */
+  public function __toString() {
+    try {
+      $type = $this->getTypeString();
+    } catch (ExceptionInterface $e) {
+      throw $e;
+    }
+
+    return sprintf(
+      '%1$s %2$s%3$s%4$s%5$s%6$s',
+      $this->name,
+      $type,
+      !is_null($this->default) ? ' DEFAULT '.$this->default : '',
+      !$this->nullable ? ' NOT NULL' : '',
+      $this->unsigned ? ' UNSIGNED' : '',
+      $this->auto_increment ? ' AUTO_INCREMENT' : ''
+    );
+  }
+
+  /**
+   * Whether the field is auto_increment or not.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return boolean
+   */
+  public function isAutoIncrement() {
+    return $this->auto_increment;
+  }
+
+  /**
+   * Attach length and decimals to field type if necessary.
+   *
+   * @since 1.0.0
+   * @access private
+   *
+   * @return string
+   *
+   * @throws Freyja\Exceptions\RuntimeException if field type isn't set.
+   */
+  private function getTypeString() {
+    if (!isset($this->type))
+      throw new RuntimeException('Field type isn\'t set');
+
+    $type = $this->type;
+    switch ($this->type) {
+      case self::INT:
+      case self::TINYINT:
+      case self::SMALLINT:
+      case self::MEDIUMINT:
+      case self::BIGINT:
+      case self::CHAR:
+      case self::VARCHAR:
+        $type .= '('.$this->length.')';
+        break;
+      case self::FLOAT:
+      case self::DOUBLE:
+      case self::DECIMAL:
+        $type .= sprintf(
+          '(%1$s,%2$s)',
+          $this->length,
+          $this->decimals
+        );
+        break;
+    }
+    return $type;
+  }
+
+  /**
    * Set data type to a numeric one.
    *
    * @since 1.0.0
@@ -603,12 +665,7 @@ class Field {
    */
   private function setIntegerType($type, $length, $max_length) {
     $this->type = $type;
-    if (!is_numeric($length) || $length > $max_length || $length < 1) {
-      $length = $max_length;
-      // TODO: log in file.
-    }
-
-    $this->length = (int) $length;
+    $this->length = self::getLength($length, $max_length, 1, $max_length);
   }
 
   /**
@@ -627,19 +684,8 @@ class Field {
    */
   private function setRealType($type, $length, $default_length, $max_length, $decimals, $default_decimals, $max_decimals) {
     $this->type = $type;
-    if (!is_numeric($length) || $length < 1 || $length > $max_length) {
-      $length = $default_length;
-      // TODO: log in file.
-    }
-
-    $this->length = (int) $length;
-
-    if (!is_numeric($decimals) || $decimals < 0 || $decimals > $max_decimals || $decimals > $this->length) {
-      $decimals = $default_decimals;
-      // TODO: log in file.
-    }
-
-    $this->decimals = (int) $decimals;
+    $this->decimals = self::getLength($decimals, $max_decimals, 0, $default_decimals);
+    $this->length = self::getLength($length, $max_length, max(1, $this->decimals), max($default_length, $this->decimals+1));
   }
 
   /**
@@ -654,9 +700,27 @@ class Field {
    */
   private function setStringType($type, $length, $default_length) {
     $this->type = $type;
-    if (!is_numeric($length) || $length < 1 || $length > 255)
-      $length = $default_length;
+    $this->length = self::getLength($length, 255, 1, $default_length);
+  }
 
-    $this->length = (int) $length;
+  /**
+   * Decide which length (or decimals) to set.
+   *
+   * @since 1.0.0
+   * @access private
+   * @static
+   *
+   * @param int $length Field length (or decimals).
+   * @param int $max Max length accepted (or decimals).
+   * @param int $min Min length accepted (or decimals).
+   * @param int $default Default length (or decimals).
+   * @return int Length (or decimals) chosen.
+   */
+  private static function getLength($length, $max, $min, $default) {
+    if (!is_numeric($length) || $length < $min || $length > $max) {
+      return (int) $default;
+      // TODO: log in file.
+    }
+    return (int) $length;
   }
 }
