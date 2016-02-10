@@ -226,8 +226,6 @@ class Table extends Query implements QueryInterface {
     if (!array_key_exists($field, $this->fields))
       throw new InvalidArgumentException('Cannot set a foreign key on a non existing field');
 
-    // TODO: Check in the schema if the table $table and the column $referenced_field exist.
-
     $this->foreign_keys[$field][] = array(
       'references' => $table,
       'on', $referenced_field
