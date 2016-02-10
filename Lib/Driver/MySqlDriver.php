@@ -91,13 +91,11 @@ class MySqlDriver implements Driver {
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
   public function execute(Query $query) {
-    $delimiter = $query->getDelimiter();
+    $delimiter = preg_quote($query->getDelimiter(), '/');
     $query = (string) $query;
 
     // Escape values between delimiters.
-    $query = preg_replace_callback('/\{esc\}(.*?)\{esc\}/', function($matches) use ($this) {
-      return $this->connection->real_escape_string($matches[1]);
-    }, $query);
+    $query = preg_replace_callback("/$delimiter(.*?)$delimiter/", array($this, 'escapeString'), $query);
 
     $result = $this->connection->query($query);
 
@@ -111,5 +109,22 @@ class MySqlDriver implements Driver {
 
     // Query successful.
     return $result;
+  }
+
+  /**
+   * Escape a string.
+   *
+   * This method is used by `Freyja\Database\Driver\MySqlDriver::execute()`.
+   * It isn't meant to be called alone.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string Escaped string.
+   */
+  public function escapeString($string) {
+    if (!isset($string[1]))
+      return;
+    return $this->connection->real_escape_string($string[1]);
   }
 }
