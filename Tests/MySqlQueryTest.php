@@ -25,6 +25,9 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    *
    * @since 1.0.0
    * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
    */
   public function testSelectWithEmptyFields() {
     $query = new MySqlQuery;
@@ -44,6 +47,9 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    *
    * @since 1.0.0
    * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
    */
   public function testSelect() {
     $query = new MySqlQuery;
@@ -55,6 +61,150 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
       $query_str,
       $expected_str,
       'Failed asserting that MySqlQuery correctly build a select query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::count()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testCountWithEmptyFields() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->count()->build();
+    $expected_str = 'SELECT COUNT(*) FROM table';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build a count query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::count()`
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testCount() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->count(array('field', 'another_field', 56))->build();
+    $expected_str = 'SELECT COUNT(field, another_field) FROM table';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build a count query.'
+    );
+  }
+
+  /**
+   * Test for MySqlQuery::count() and MySqlQuery::select().
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testSelectWithCount() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->select('field', 'other_field')->count(array('another_field', 56))->build();
+    $expected_str = 'SELECT COUNT(field, another_field) FROM table';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build a select query with count.'
+    );
+  }
+
+  /**
+   * Test for MySqlQuery::where() and MySqlQuery::orWhere().
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::orWhere
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testWhere() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->select('field')->where('some_field', 'ciaone')->orWhere(array(
+      array('some_other_field', '>', 56),
+      array('some_beautiful_field', 'between', array(null, 65))
+    ))->build();
+    $expected_str = 'SELECT field
+      FROM table
+      WHERE some_field = \'ciaone\'
+      OR some_other_field > 56
+      OR some_beautiful_field BETWEEN \'NULL\' AND 65';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build a query with a where clause.'
+    );
+  }
+
+  /**
+   * Test for MySqlQuery::whereIn() and MySqlQuery::whereNotIn().
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::whereIn
+   * @requires function Freyja\Database\Query\MySqlQuery::whereNotIn
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testWhereIn() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->select('field')->whereIn('field', array(1, 2, 3))->whereNotIn('field', array(4, 5, 6))->build();
+    $expected_str = 'SELECT field FROM table WHERE field IN(1, 2, 3) AND field NOT IN(4, 5, 6)';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build a query with a where clause.'
+    );
+  }
+
+  /**
+   * Test for MySqlQuery::update().
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::update
+   * @requires function Freyja\Database\Query\MySqlQuery::orderBy
+   * @requires function Freyja\Database\Query\MySqlQuery::limit
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testUpdate() {
+    $query = new MySqlQuery;
+    $query_str = $query->update(array(
+      'field' => 56,
+      'other_field' => 'ciaone',
+      'another_field' => null
+    ))->orderBy('field', 'desc')->limit(15)->build();
+    $expected_str = 'UPDATE table SET field = 56, other_field = \'ciaone\', another_field = \'NULL\'';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build an update query.'
     );
   }
 }
