@@ -2,12 +2,12 @@
 /**
  * MySqlQuery class file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @copyright 2016 SqueezyWeb
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Query;
 
 use Freyja\Exceptions\InvalidArgumentException;
 use Freyja\Exceptions\RuntimeException;
@@ -16,7 +16,7 @@ use Freyja\Exceptions\ExceptionInterface;
 /**
  * MySqlQuery class.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
@@ -185,6 +185,18 @@ class MySqlQuery extends Query implements QueryInterface {
   private $result;
 
   /**
+   * Value delimiter.
+   *
+   * Used to mark string values, so that they can be recognized and escaped
+   * when the query will be executed.
+   *
+   * @since 1.0.0
+   * @access private
+   * @var string
+   */
+  private $delimiter = '{esc}';
+
+  /**
    * DELETE modifiers constants.
    *
    * @since 1.0.0
@@ -319,8 +331,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set a DELETE query.
    *
-   * If clause is set through the method `MySqlQuery::where()`, all rows of the table
-   * will be affected.
+   * If clause is set through the method `MySqlQuery::where()`, all rows of the
+   * table will be affected.
    *
    * @since 1.0.0
    * @access public
@@ -353,8 +365,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * JOIN tables.
    *
    * JOIN two tables. Second table of the JOIN will be the first argument of
-   * this method. The first one will be the one set with the `MySqlQuery::table()`
-   * method.
+   * this method. The first one will be the one set with the
+   * `MySqlQuery::table()` method.
    *
    * @since 1.0.0
    * @access public
@@ -475,8 +487,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @access public
    *
    * @param string $field Field name.
-   * @param string $direction Optional. Set the direction of the sort. Permitted
-   * values: 'asc', 'desc'. Default: 'asc'.
+   * @param string $direction Optional. Set the direction of the sort. Allowed
+   * values: 'ASC', 'DESC'. Default: 'ASC'.
    * @return self
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if $field and
@@ -576,8 +588,8 @@ class MySqlQuery extends Query implements QueryInterface {
    * @param int $offset Optional. Specify the OFFSET. Default: null.
    * @return self
    *
-   * @throws Freyja\Exceptions\InvalidArgumentException if one of the
-   * arguments aren't numeric.
+   * @throws Freyja\Exceptions\InvalidArgumentException if one of the arguments
+   * aren't numeric.
    */
   public function limit($limit, $offset = null) {
     if (!is_numeric($limit))
@@ -593,8 +605,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set the query to return only the first row.
    *
-   * It is equivalent to call `MySqlQuery::limit(1, 0)`. In other words, this method
-   * will perform a `LIMIT 0, 1` in the query.
+   * It is equivalent to call `MySqlQuery::limit(1, 0)`. In other words, this
+   * method will perform a `LIMIT 0, 1` in the query.
    *
    * @since 1.0.0
    * @access public
@@ -731,6 +743,18 @@ class MySqlQuery extends Query implements QueryInterface {
     } catch (ExceptionInterface $e) {
       throw $e;
     }
+  }
+
+  /**
+   * Retrieve delimiter.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string
+   */
+  public function getDelimiter() {
+    return $this->delimiter;
   }
 
   /**
@@ -919,8 +943,12 @@ class MySqlQuery extends Query implements QueryInterface {
    */
   private static function correctValue($value, $method) {
     if (is_string($value)) {
-      // Put quotes around the value if it is a string.
-      $value = "'".$value."'";
+      // Put quotes and delimiters around the value if it is a string.
+      $value = sprintf(
+        '\'%1$s%2$s%1$s\'',
+        $this->delimiter,
+        $value
+      );
     } elseif (is_null($value)) {
       // Replace the value with a string 'NULL' if it is null.
       $value = 'NULL';
@@ -935,7 +963,7 @@ class MySqlQuery extends Query implements QueryInterface {
           'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
         );
       else
-        $value = $serialized;
+        $value = $this->delimiter.$serialized.$this->delimiter;
     }
     // Any other case (e.g. value is integer) is ok as it is.
     return $value;
@@ -1092,7 +1120,6 @@ class MySqlQuery extends Query implements QueryInterface {
 
     // Append `SET` part.
     $query .= 'SET ';
-    $count = 0;
     $query .= join(', ', array_map(function($field, $value) {
       return $field.' = '.$value;
     }, array_keys($this->update), array_values($this->update)));

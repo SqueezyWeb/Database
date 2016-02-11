@@ -2,23 +2,23 @@
 /**
  * MySqlDriver class file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Driver;
 
 use Freyja\Exceptions\InvalidArgumentException;
 use Freyja\Exceptions\RuntimeException;
-use Freyja\Database\Query;
+use Freyja\Database\Query\Query;
 use mysqli;
 
 /**
  * MySqlDriver class.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
@@ -85,12 +85,18 @@ class MySqlDriver implements Driver {
    * @since 1.0.0
    * @access public
    *
-   * @param Query Query that will be executed.
+   * @param Freyja\Database\Query\Query Query that will be executed.
    * @return mixed Query result.
    *
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
   public function execute(Query $query) {
+    $delimiter = preg_quote($query->getDelimiter(), '/');
+    $query = (string) $query;
+
+    // Escape values between delimiters.
+    $query = preg_replace_callback("/$delimiter(.*?)$delimiter/", array($this, 'escapeString'), $query);
+
     $result = $this->connection->query($query);
 
     // Handle query errors.
@@ -103,5 +109,21 @@ class MySqlDriver implements Driver {
 
     // Query successful.
     return $result;
+  }
+
+  /**
+   * Escape a string.
+   *
+   * This method is used by `Freyja\Database\Driver\MySqlDriver::execute()`.
+   * It isn't meant to be called alone.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @return string Escaped string.
+   */
+  public function escapeString($string) {
+    if (isset($string[1]))
+      return $this->connection->real_escape_string($string[1]);
   }
 }

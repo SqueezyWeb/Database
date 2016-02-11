@@ -2,18 +2,18 @@
 /**
  * QueryInterface interface file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Query;
 
 /**
  * QueryInterface interface.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0

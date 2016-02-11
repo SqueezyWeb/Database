@@ -2,18 +2,18 @@
 /**
  * Driver interface file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Driver;
 
 /**
  * Driver interface.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
@@ -52,7 +52,7 @@ interface Driver {
    * @since 1.0.0
    * @access public
    *
-   * @param Freyja\Database\Query Query that will be executed.
+   * @param Freyja\Database\Query\Query Query that will be executed.
    * @return mixed Query result.
    *
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.

@@ -2,18 +2,18 @@
 /**
  * Query class file.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @copyright 2016 SqueezyWeb
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  */
 
-namespace Freyja\Database;
+namespace Freyja\Database\Query;
 
 /**
  * Query class.
  *
- * @package Freyja\Database
+ * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
  * @version 1.0.0
