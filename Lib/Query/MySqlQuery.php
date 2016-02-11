@@ -1120,7 +1120,6 @@ class MySqlQuery extends Query implements QueryInterface {
 
     // Append `SET` part.
     $query .= 'SET ';
-    $count = 0;
     $query .= join(', ', array_map(function($field, $value) {
       return $field.' = '.$value;
     }, array_keys($this->update), array_values($this->update)));
