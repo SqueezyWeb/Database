@@ -26,6 +26,7 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::select
    * @requires function Freyja\Database\Query\MySqlQuery::build
    */
@@ -48,6 +49,7 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::select
    * @requires function Freyja\Database\Query\MySqlQuery::build
    */
@@ -70,6 +72,7 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::count
    * @requires function Freyja\Database\Query\MySqlQuery::build
    */
@@ -91,6 +94,7 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::count
    * @requires function Freyja\Database\Query\MySqlQuery::build
    */
@@ -107,11 +111,12 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
-   * Test for MySqlQuery::count() and MySqlQuery::select().
+   * Test for `MySqlQuery::count()` and `MySqlQuery::select()`.
    *
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::select
    * @requires function Freyja\Database\Query\MySqlQuery::count
    * @requires function Freyja\Database\Query\MySqlQuery::build
@@ -129,11 +134,12 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
-   * Test for MySqlQuery::where() and MySqlQuery::orWhere().
+   * Test for `MySqlQuery::where()` and `MySqlQuery::orWhere()`.
    *
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::select
    * @requires function Freyja\Database\Query\MySqlQuery::where
    * @requires function Freyja\Database\Query\MySqlQuery::orWhere
@@ -159,11 +165,12 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
-   * Test for MySqlQuery::whereIn() and MySqlQuery::whereNotIn().
+   * Test for `MySqlQuery::whereIn()` and `MySqlQuery::whereNotIn()`.
    *
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::select
    * @requires function Freyja\Database\Query\MySqlQuery::whereIn
    * @requires function Freyja\Database\Query\MySqlQuery::whereNotIn
@@ -182,11 +189,12 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
-   * Test for MySqlQuery::update().
+   * Test for `MySqlQuery::update()`.
    *
    * @since 1.0.0
    * @access public
    *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
    * @requires function Freyja\Database\Query\MySqlQuery::update
    * @requires function Freyja\Database\Query\MySqlQuery::orderBy
    * @requires function Freyja\Database\Query\MySqlQuery::limit
@@ -198,13 +206,70 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
       'field' => 56,
       'other_field' => 'ciaone',
       'another_field' => null
-    ))->orderBy('field', 'desc')->limit(15)->build();
-    $expected_str = 'UPDATE table SET field = 56, other_field = \'ciaone\', another_field = \'NULL\'';
+    ))->table('table')->orderBy('field', 'desc')->limit(15)->build();
+    $expected_str = 'UPDATE table
+      SET field = 56, other_field = \'ciaone\', another_field = \'NULL\'
+      ORDER BY field DESC
+      LIMIT 15';
 
     $this->assertEquals(
       $query_str,
       $expected_str,
       'Failed asserting that MySqlQuery correctly build an update query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::first()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::update
+   * @requires function Freyja\Database\Query\MySqlQuery::first
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testFirst() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->update(array(
+      'field' => 56,
+      'other_field' => 'ciaone',
+      'another_field' => null
+    ))->first()->build();
+    $expected_str = 'UPDATE table
+      SET field = 56, other_field = \'ciaone\', another_field = \'NULL\'
+      LIMIT 0, 1';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build an update query with a limit(0,1).'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::insert()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::insert
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testInsert() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->insert(array(
+      'field' => 'ciaone',
+      'another_field' => 56
+    ))->build();
+    $expected_str = 'INSERT INTO table (field, another_field) VALUES (\'ciaone\', 56)';
+
+    $this->assertEquals(
+      $query_str,
+      $expected_str,
+      'Failed asserting that MySqlQuery correctly build an insert query.'
     );
   }
 }
