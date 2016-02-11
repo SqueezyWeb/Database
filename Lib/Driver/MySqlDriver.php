@@ -123,8 +123,7 @@ class MySqlDriver implements Driver {
    * @return string Escaped string.
    */
   public function escapeString($string) {
-    if (!isset($string[1]))
-      return;
-    return $this->connection->real_escape_string($string[1]);
+    if (isset($string[1]))
+      return $this->connection->real_escape_string($string[1]);
   }
 }
