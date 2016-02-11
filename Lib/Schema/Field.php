@@ -450,7 +450,7 @@ class Field {
    * @throws Freyja\Exceptions\InvalidArgumentException if $value isn't a
    * scalar.
    */
-  public function default($value = self::NULL) {
+  public function setDefault($value = self::NULL) {
     if ($value == self::NULL && $this->nullable == false)
       throw new LogicException('Cannot set default value to NULL if the field is NOT NULL');
 

@@ -565,7 +565,7 @@ class Table extends Query implements QueryInterface {
           $part .= sprintf(
             '%1$s %2$s',
             $type,
-            $field_name;
+            $field_name
           );
 
           // Prepare string based on the type of the alteration.
