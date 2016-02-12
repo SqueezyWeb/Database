@@ -646,8 +646,12 @@ class MySqlQuery extends Query implements QueryInterface {
    * correct form.
    */
   public function where($clauses) {
+    $args = func_get_args();
     try {
-      $this->processWhere(func_get_args(), 'where');
+      if (count($args) == 1 && is_array($clauses))
+        $this->processWhere($clauses, 'where');
+      else
+        $this->processWhere(array($args), 'where');
     } catch (ExceptionInterface $e) {
       throw $e;
     }
@@ -671,8 +675,12 @@ class MySqlQuery extends Query implements QueryInterface {
    * correct form.
    */
   public function orWhere($clauses) {
+    $args = func_get_args();
     try {
-      $this->processWhere(func_get_args(), 'orWhere');
+      if (count($args) == 1)
+        $this->processWhere($clauses, 'orWhere');
+      else
+        $this->processWhere(array($args), 'orWhere');
     } catch (ExceptionInterface $e) {
       throw $e;
     }
@@ -777,57 +785,30 @@ class MySqlQuery extends Query implements QueryInterface {
    * in the correct form.
    */
   private function processWhere(array $args, $method = 'where') {
-    if (is_array($args[0])) {
-      // Method was called with an array of clauses.
-      foreach ($args[0] as $clause) {
-        // Check if the array has other arrays or not, and if it has, then
-        // check if every internal array has only scalar inside.
-        if (!is_array($clause) || count($clause) < 2 || count($clause) > 3)
-          throw new InvalidArgumentException(
-            'Too much elements in a single internal array passed to `MySqlQuery::'.$method.'()`'
-          );
-        $count = 0;
-        foreach ($clause as $scalar) {
-          if (!is_scalar($scalar) && is_array($scalar) && $count != 2)
-            throw new InvalidArgumentException(
-              'Some elements in the internal arrays passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
-            );
-          $count++;
-        }
-      }
-
-      // The array is in the correct form.
-      try {
-        $this->buildWhereClause($args[0], ($method == 'where') ? 'AND' : 'OR');
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-    } elseif (is_scalar($args[0])) {
-      // Method was called with a list of arguments.
-      // Check if the arguments are all scalar, and if they are two or three.
-      if (count($args) < 2 || count($args) > 3)
-        throw new InvalidArgumentException(
-          'Too much arguments passed to `MySqlQuery::'.$method.'()`'
-        );
+    foreach ($args as $arg) {
+      // Verify that every element is an array with 2 or 3 elements inside.
+      if (!is_array($arg) || count($arg) < 2 || count($arg) > 3)
+        throw new InvalidArgumentException(sprintf(
+          'Invalid data passed to `MySqlQuery::%s()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed',
+          $method
+        ));
+      // Chech every element of the internal arrays to be strings (or array if
+      // it is the 3rd element)
       $count = 0;
-      foreach ($args as $clause) {
-        if (!is_scalar($clause) && is_array($clause) && $count != 2)
-        // if ((!is_scalar($clause) && $count != 2) || (!is_scalar($clause) && !is_array($clause) && $count == 2))
-            throw new InvalidArgumentException(
-              'Some arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
-            );
+      foreach ($arg as $element) {
+        if (!is_scalar($element) && !(is_array($element) && $count == 2))
+          throw new InvalidArgumentException(sprintf(
+            'Some elements of some clauses passed to `MySqlQuery::%s()` are invalid',
+            $method
+          ));
         $count++;
       }
-
-      // Arguments are in the correct form.
-      try {
-        $this->buildWhereClause(array($args), $method == 'where' ? 'AND' : 'OR');
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-    } else {
-      // Method was called in an incorrect way.
-      throw new InvalidArgumentException('Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form');
+    }
+    // $args is in the correct form.
+    try {
+      $this->buildWhereClause($args, ($method == 'where') ? 'AND' : 'OR');
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
   }
 
@@ -876,22 +857,18 @@ class MySqlQuery extends Query implements QueryInterface {
    * @since 1.0.0
    * @access private
    *
-   * @param array $clauses `WHERE` clauses.
+   * @param array $clauses Array containing arrays, each of which is a `WHERE`
+   * clause.
    * @param string $operator `AND` or `OR`.
    *
-   * @throws Freyja\Exceptions\RuntimeException if the arguments aren't in the
-   * correct form.
+   * @throws Freyja\Exceptions\InvalidArgumentException if the arguments aren't
+   * in the correct form.
    */
   private function buildWhereClause(array $clauses, $operator) {
     $where = $this->where;
     $method = ($operator == 'AND') ? 'where' : 'orWhere';
 
     foreach ($clauses as $clause) {
-      if (!is_array($clause))
-        throw new RuntimeException(
-          'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
-        );
-
       if (count($clause) == 2) {
         $value = $clause[1];
         $oprt = '=';
@@ -899,8 +876,8 @@ class MySqlQuery extends Query implements QueryInterface {
         $value = $clause[2];
         $oprt = $clause[1];
         if (!self::isOperatorValid($oprt, 'buildWhereClause'))
-          throw new RuntimeException(
-            'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
+          throw new InvalidArgumentException(
+            'One of the operators passed to `MySqlQuery::'.$method.'()` is invalid'
           );
       }
 
@@ -915,8 +892,8 @@ class MySqlQuery extends Query implements QueryInterface {
         // array, linked by 'AND'.
         // If the array doesn't contains exactly 2 values, raise an exception.
         if (count($value) != 2)
-          throw new RuntimeException(
-            'Arguments passed to `MySqlQuery::'.$method.'()` aren\'t in the correct form'
+          throw new InvalidArgumentException(
+            'Operator BETWEEN requires a range specification as an array with two elements'
           );
         try {
           $value = array_map(array($this, 'correctValue'), $value, array_fill(0, count($value), __METHOD__));
@@ -924,8 +901,13 @@ class MySqlQuery extends Query implements QueryInterface {
           throw $e;
         }
         $value = join(' AND ', $value);
-      } elseif (!is_array($value) && $oprt != 'BETWEEN') {
-        throw new InvalidArgumentException('Operator BETWEEN requires a range specification as an array with two elements')
+      } elseif (!is_array($value) && $oprt == 'BETWEEN') {
+        throw new InvalidArgumentException('Operator BETWEEN requires a range specification as an array with two elements, no array was given');
+      } elseif (is_array($value) && $oprt != 'BETWEEN') {
+        throw new InvalidArgumentException(sprintf(
+          'Any operator except BETWEEN accept only a single value in method `MySqlQuery::%s()`',
+          $method
+        ));
       } else {
         try {
           $value = $this->correctValue($value, $method);
