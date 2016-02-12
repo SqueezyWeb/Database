@@ -9,7 +9,9 @@
 
 namespace Freyja\Database\Tests;
 
+use Freyja\Database\Tests\FixtureTestCase;
 use Freyja\Database\Driver\MySqlDriver;
+use ReflectionProperty;
 
 /**
  * MySqlDriverTest class.
@@ -19,21 +21,38 @@ use Freyja\Database\Driver\MySqlDriver;
  * @since 0.1.0
  * @version 1.0.0
  */
-class MySqlDriverTest extends \PHPUnit_Extensions_Database_Testcase {
+class MySqlDriverTest extends FixtureTestCase {
   /**
-   * @return PHPUnit_Extensions_Database_DB_IDatabaseConnection
+   * Fixtures.
+   *
+   * @since 1.0.0
+   * @access public
+   * @var array
    */
-  public function getConnection() {
-    $pdo = new PDO('sqlite::memory:');
-    return $this->createDefaultDBConnection($pdo, ':memory:');
-  }
+  public $fixtures = array('customers');
 
   /**
-   * @return PHPUnit_Extensions_Database_DataSet_IDataSet
+   * Test for `MySqlDriver::connect()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::connect
    */
-  public function getDataSet() {
-    return new PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-      dirname(__FILE__)."/_files/guestbook.yml"
+  public function testConnect() {
+    $connection = $this->getConnection()->getConnection();
+
+    // Set accessibility to object property.
+    $reflection_connection = new ReflectionProperty('Freyja\Database\Driver\MySqlDriver', 'connection');
+    $reflection_connection->setAccessible(true);
+
+    $driver = new MySqlDriver('localhost', 'test', 'gian', 'gian');
+    $driver_connection = $reflection_connection->getValue($driver);
+
+    $this->assertEquals(
+      $connection,
+      $driver_connection,
+      'Failed asserting that MySqlDriver correctly connect to the database.'
     );
   }
 }
