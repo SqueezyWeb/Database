@@ -10,6 +10,8 @@
 
 namespace Freyja\Database\Driver;
 
+use Freyja\Database\Query\Query;
+
 /**
  * Driver interface.
  *
