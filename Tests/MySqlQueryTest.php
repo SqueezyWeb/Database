@@ -464,11 +464,16 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @requires function Freyja\Database\Query\MySqlQuery::build
    *
    * @expectedException Freyja\Exceptions\InvalidArgumentException
-   * @expectedExceptionMessage Too much arguments passed to `MySqlQuery::where()`
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
    */
   public function testWhereWithMoreStringsThanAllowed() {
     $query = new MySqlQuery;
-    $query_str = $query->table('table')->select('field')->where('some_field', '=', 'ciaone', 'wrong_argument')->orWhere(array(
+    $query_str = $query->table('table')->select(array('field'))->where(
+      'some_field',
+      '=',
+      'ciaone',
+      'wrong_argument'
+    )->orWhere(array(
       array('some_other_field', '>', 56),
       array('some_beautiful_field', 'between', array(null, 65))
     ))->build();
@@ -486,35 +491,227 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    * @requires function Freyja\Database\Query\MySqlQuery::build
    *
    * @expectedException Freyja\Exceptions\InvalidArgumentException
-   * @expectedExceptionMessage Some arguments passed to `MySqlQuery::where()` aren't in the correct form
-   */
-  public function testWhereWithInvalidArgumentType() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->select('field')->where('some_field', array(0, 56), 'ciaone')->orWhere(array(
-      array('some_other_field', '>', 56),
-      array('some_beautiful_field', 'between', array(null, 65))
-    ))->build();
-  }
-
-  /**
-   * Test for `MySqlQuery::where()`.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::select
-   * @requires function Freyja\Database\Query\MySqlQuery::where
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   *
-   * @expectedException Freyja\Exceptions\InvalidArgumentException
-   * @expectedExceptionMessage Some arguments passed to `MySqlQuery::where()` aren't in the correct form
+   * @expectedExceptionMessage Operator BETWEEN requires a range specification as an array with two elements, no array was given
    */
   public function testWhereWithInvalidArgumentTypeForBetweenOperator() {
     $query = new MySqlQuery;
-    $query_str = $query->table('table')->select('field')->where('some_field', 'between', 'ciaone')->orWhere(array(
-      array('some_other_field', '>', 56),
-      array('some_beautiful_field', 'between', array(null, 65))
+    $query_str = $query->table('table')->select(array('field'))->where('some_field', 'between', 'ciaone')->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Any operator except BETWEEN accept only a single value in method `MySqlQuery::where()`
+   */
+  public function testWherePassingArrayValueButNoBetweenOperator() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->select(array('field'))->where('some_field', '>', array('ciaone', 56))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
+   */
+  public function testWherePassingOneStringOnly() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->select(array('field'))->where('some_field')->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @dataProvider whereClausesProvider
+   */
+  public function testWhereWithExceptionForInvalidData($field, $operator, $value, $exception, $exception_message) {
+    $this->setExpectedException($exception, $exception_message);
+
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where($field, $operator, $value)->build();
+  }
+
+  /**
+   * Data provider for testing the method `MySqlQuery::where()`.
+   *
+   * @since 1.0.0
+   * @access public
+   */
+  public function whereClausesProvider() {
+    $exception = 'Freyja\Exceptions\InvalidArgumentException';
+    $exception_message = 'Some elements of some clauses passed to `MySqlQuery::where()` are invalid';
+    return array(
+      'array as field' => array(array('field'), '=', 56, $exception, $exception_message),
+      'array as operator' => array('field', array('='), 56, $exception, $exception_message),
+      'object as field' => array(new MySqlQuery, '=', 56, $exception, $exception_message),
+      'object as operator' => array('field', new MySqlQuery, 56, $exception, $exception_message),
+      'object as value' => array('field', '=', new MySqlQuery, $exception, $exception_message)
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Any operator except BETWEEN accept only a single value in method `MySqlQuery::where()`
+   */
+  public function testWherePassingArrayWithArrayValueButNoBetweenOperator() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array(
+      array('field', '>', array(0, 56))
     ))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
+   */
+  public function testWherePassingArrayWithOnlyOneString() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array(
+      array('field')
+    ))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
+   */
+  public function testWherePassingArrayWithMoreStringsThanAllowed() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array(
+      array('field', '=', 'ciaone', 'exceeding string')
+    ))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Operator BETWEEN requires a range specification as an array with two elements, no array was given
+   */
+  public function testWherePassingBetweenOperatorButNoArrayValue() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array(
+      array('field', 'between', 'ciaone')
+    ))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
+   */
+  public function testWherePassingNotWellEncapsulatedClause() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array('field', '=', 'ciaone'))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Some elements of some clauses passed to `MySqlQuery::where()` are invalid
+   */
+  public function testWherePassingMultipleNotWellEncapsulatedClauses() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array('field', 'ciaone'), array('field', '>', 56))->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::where`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Invalid data passed to `MySqlQuery::where()`: every clause must be an array with a minimum of two elements and a maximum of three, or direclty two or three scalars if only one clause is passed
+   */
+  public function testWherePassingArrayAndStrings() {
+    $query = new MySqlQuery;
+    $query->table('table')->select('*')->where(array('field', 'ciaone'), 'field', '=', 56)->build();
   }
 }
