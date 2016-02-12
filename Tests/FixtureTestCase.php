@@ -46,8 +46,9 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
    * @access public
    */
   public function setUp() {
-    $connection = $this->getConnection();
-    $mysqli = $connection->getConnection();
+    // $connection = $this->getConnection();
+    // $mysqli = $connection->getConnection();
+    $mysqli = $this->getConnection();
 
     // Set up tables.
     $fixture_data_set = $this->getDataSet($this->fixtures);
@@ -77,8 +78,9 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
     $all_tables = $this->getDataSet($this->fixtures)->getTableNames();
     foreach ($all_tables as $table) {
       // Drop table.
-      $connection = $this->getConnection();
-      $mysqli = $connection->getConnection();
+      // $connection = $this->getConnection();
+      // $mysqli = $connection->getConnection();
+      $mysqli = $this->getConnection();
       $mysqli->query("DROP TABLE IF EXISTS `$table`;");
     }
 
@@ -94,8 +96,9 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
   public function getConnection() {
     if ($this->connection == null) {
       try {
-        $mysqli = new mysqli('localhost', 'root', 'root', 'test');
-        $this->connection = $this->createDefaultDBConnection($mysqli, 'test');
+        // $mysqli = new mysqli('localhost', 'gian', 'gian', 'test');
+        // $this->connection = $this->createDefaultDBConnection($mysqli, 'test');
+        $this->connection = new mysqli('localhost', 'gian', 'gian', 'test');
       } catch(Exception $e) {
         echo $e->getMessage();
       }
@@ -116,12 +119,12 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
     if (empty($fixtures))
       $fixtures = $this->fixtures;
 
-    $composite_ds = new PHPUnit_Extensions_Database_DataSet_CompositeDataSet(array());
+    $composite_ds = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(array());
     $fixture_path = dirname(__FILE__).'/fixtures';
 
     foreach ($fixtures as $fixture) {
-      $path = $fixture_path."/$fixture.xml";
-      $ds = new PHPUnit_Extensions_Database_DataSet_YamlDataSet($path);
+      $path = $fixture_path."/$fixture.yml";
+      $ds = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet($path);
       $composite_ds->addDataSet($ds);
     }
     return $composite_ds;
