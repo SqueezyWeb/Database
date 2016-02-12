@@ -19,7 +19,8 @@
     },
     "autoload": {
       "psr-4": {
-        "Freyja\\Database\\": "Lib"
+        "Freyja\\Database\\": "Lib/",
+        "Freyja\\Database\\Tests\\": "Tests/"
       }
     }
 }
