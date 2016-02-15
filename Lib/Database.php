@@ -110,7 +110,7 @@ class Database {
    * @return self
    */
   public function setGlobal() {
-    self::$global_dinstance = $this;
+    self::$global_instance = $this;
     return $this;
   }
 
@@ -120,8 +120,7 @@ class Database {
    * @since 1.0.0
    * @access public
    *
-   * @return Database Global instance. Null if global instance isn't
-   * set.
+   * @return Database Global instance. Null if global instance isn't set.
    */
   public function getGlobal() {
     return self::$global_instance;
@@ -136,7 +135,7 @@ class Database {
    * @return string Driver name (e.g. 'MySqlDriver').
    */
   public function getDriver() {
-    return get_class($this->driver);
+    return join('', array_slice(explode('\\', get_class($this->driver)), -1));
   }
 
   /**

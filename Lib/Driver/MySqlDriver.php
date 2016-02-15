@@ -43,6 +43,7 @@ class MySqlDriver implements Driver {
    * @param string $database Database name.
    * @param string $username Access username.
    * @param string $password Access password.
+   * @return self
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if one of the arguments
    * isn't a string.
@@ -65,6 +66,8 @@ class MySqlDriver implements Driver {
 
     // Connection successful.
     $this->connection = $connection;
+
+    return $this;
   }
 
   /**
@@ -76,7 +79,7 @@ class MySqlDriver implements Driver {
    * @return string Driver name.
    */
   public function getName() {
-    return get_class();
+    return join('', array_slice(explode('\\', get_class()), -1));
   }
 
   /**
@@ -92,12 +95,12 @@ class MySqlDriver implements Driver {
    */
   public function execute(Query $query) {
     $delimiter = preg_quote($query->getDelimiter(), '/');
-    $query = (string) $query;
+    $query_str = (string) $query;
 
     // Escape values between delimiters.
-    $query = preg_replace_callback("/$delimiter(.*?)$delimiter/", array($this, 'escapeString'), $query);
+    $query_str = preg_replace_callback("/$delimiter(.*?)$delimiter/", array($this, 'escapeString'), $query_str);
 
-    $result = $this->connection->query($query);
+    $result = $this->connection->query($query_str);
 
     // Handle query errors.
     if (!$result)
@@ -108,7 +111,13 @@ class MySqlDriver implements Driver {
       ));
 
     // Query successful.
-    return $result;
+    $results = array();
+    if (!is_bool($result))
+      while ($row = $result->fetch_assoc())
+        $results[] = $row;
+    else
+      $results = $result;
+    return $results;
   }
 
   /**
