@@ -9,7 +9,7 @@
 
 namespace Freyja\Database\Tests;
 
-use mysqli;
+use PDO;
 
 /**
  * FixtureTestCase class.
@@ -46,26 +46,26 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
    * @access public
    */
   public function setUp() {
-    // $connection = $this->getConnection();
-    // $mysqli = $connection->getConnection();
-    $mysqli = $this->getConnection();
+    $connection = $this->getConnection();
+    $pdo = $connection->getConnection();
+    // $mysqli = $this->getConnection();
 
     // Set up tables.
     $fixture_data_set = $this->getDataSet($this->fixtures);
     foreach ($fixture_data_set->getTableNames() as $table) {
       // Drop table.
-      $mysqli->query("DROP TABLE IF EXISTS `$table`;");
+      $pdo->exec("DROP TABLE IF EXISTS `$table`;");
       // Recreate table.
       $meta = $fixture_data_set->getTableMetaData($table);
       $create = "CREATE TABLE IF NOT EXISTS `$table` ";
       $cols = array();
       foreach ($meta->getColumns() as $col)
-        $cols[] = "`$col`";
+        $cols[] = "`$col` VARCHAR(200)";
       $create .= '('.implode(',', $cols).');';
-      $mysqli->query($create);
+      $pdo->exec($create);
     }
 
-    parent::setUp();
+    // parent::setUp();
   }
 
   /**
@@ -78,13 +78,13 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
     $all_tables = $this->getDataSet($this->fixtures)->getTableNames();
     foreach ($all_tables as $table) {
       // Drop table.
-      // $connection = $this->getConnection();
-      // $mysqli = $connection->getConnection();
-      $mysqli = $this->getConnection();
-      $mysqli->query("DROP TABLE IF EXISTS `$table`;");
+      $connection = $this->getConnection();
+      $pdo = $connection->getConnection();
+      // $mysqli = $this->getConnection();
+      $pdo->exec("DROP TABLE IF EXISTS `$table`;");
     }
 
-    parent::tearDown();
+    // parent::tearDown();
   }
 
   /**
@@ -96,9 +96,9 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
   public function getConnection() {
     if ($this->connection == null) {
       try {
-        // $mysqli = new mysqli('localhost', 'gian', 'gian', 'test');
-        // $this->connection = $this->createDefaultDBConnection($mysqli, 'test');
-        $this->connection = new mysqli('localhost', 'gian', 'gian', 'test');
+        $pdo = new PDO('mysql:host=localhost;dbname=test', 'gian', 'gian');
+        $this->connection = $this->createDefaultDBConnection($pdo, 'test');
+        // $this->connection = new mysqli('localhost', 'gian', 'gian', 'test');
       } catch(Exception $e) {
         echo $e->getMessage();
       }

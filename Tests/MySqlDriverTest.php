@@ -11,6 +11,7 @@ namespace Freyja\Database\Tests;
 
 use Freyja\Database\Tests\FixtureTestCase;
 use Freyja\Database\Driver\MySqlDriver;
+use Freyja\Database\Query\MySqlQuery;
 use ReflectionProperty;
 
 /**
@@ -40,19 +41,95 @@ class MySqlDriverTest extends FixtureTestCase {
    * @requires function Freyja\Database\Driver\MySqlDriver::connect
    */
   public function testConnect() {
-    $connection = $this->getConnection()->getConnection();
-
     // Set accessibility to object property.
     $reflection_connection = new ReflectionProperty('Freyja\Database\Driver\MySqlDriver', 'connection');
     $reflection_connection->setAccessible(true);
 
-    $driver = new MySqlDriver('localhost', 'test', 'gian', 'gian');
+    $driver = new MySqlDriver;
+    $driver->connect('localhost', 'test', 'gian', 'gian');
     $driver_connection = $reflection_connection->getValue($driver);
 
-    $this->assertEquals(
-      $connection,
-      $driver_connection,
+    $this->assertNull(
+      $driver_connection->connect_error,
       'Failed asserting that MySqlDriver correctly connect to the database.'
+    );
+  }
+
+  /**
+   * Test for `MySqlDriver::getName()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::getName
+   */
+  public function testGetName() {
+    $driver = new MySqlDriver;
+    $driver_name = $driver->getName();
+
+    $this->assertEquals(
+      $driver_name,
+      'MySqlDriver',
+      'Failed asserting that MySqlDriver::getName() correctly retrieve the driver name.'
+    );
+  }
+
+  /**
+   * Test for `MySqlDriver::execute()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::execute
+   */
+  public function testExecute() {
+    // Load data.
+    $ds = $this->getDataSet(array('customers'));
+    $this->loadDataSet($ds);
+
+    $query = new MySqlQuery;
+    $query->table('customers')->select(array('name', 'surname'))->where('customer_id', 1);
+
+    $driver = new MySqlDriver;
+    $result = $driver->connect('localhost', 'test', 'gian', 'gian')->execute($query);
+
+    $this->assertEquals(
+      $result[0]['name'],
+      'Tizio',
+      'Failed asserting that MySqlDriver::execute correctly execute the specified query.'
+    );
+
+    $this->assertEquals(
+      $result[0]['surname'],
+      'Caio',
+      'Failed asserting that MySqlDriver::execute correctly execute the specified query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlDriver::execute()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::execute
+   */
+  public function testExecuteWithEscapedStrings() {
+    // Load data.
+    $connection = $this->getConnection();
+    $ds = $this->getDataSet(array('customers'));
+    $this->loadDataSet($ds);
+
+    $query = new MySqlQuery;
+    $query->table('customers')->select('email')->where('name', 'Tizio');
+
+    $driver = new MySqlDriver;
+    $result = $driver->connect('localhost', 'test', 'gian', 'gian')->execute($query);
+
+    $this->assertEquals(
+      $result[0]['email'],
+      'tizio.caio@email.address',
+      'Failed asserting that MySqlDriver::execute correctly execute the specified query.'
     );
   }
 }
