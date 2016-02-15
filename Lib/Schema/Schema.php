@@ -108,7 +108,6 @@ class Schema {
   public function create(Table $table) {
     if ($this->hasTable($table)) {
       // Table already exists.
-      // TODO: log a notice that table already exists. Log in a file too.
     } else {
       // Table doesn't exists, create it.
       try {
@@ -122,7 +121,6 @@ class Schema {
 
       // Write new schema in yaml file.
       $this->updateSchema();
-      // TODO: log in file that everything is done correctly (?).
     }
   }
 
@@ -147,7 +145,6 @@ class Schema {
       $table = new Table($table);
 
     if (!$this->hasTable($table)) {
-      // TODO: send notice, and log to file, that table doesn't exists.
     } else {
       // Table exists, drop it.
       try {
@@ -159,7 +156,6 @@ class Schema {
       unset($this->schema['fields'][$table->getName()]);
       // Write new schema in yaml file.
       $this->updateSchema();
-      // TODO: log in file that everything is done correctly (?).
     }
   }
 
@@ -178,7 +174,6 @@ class Schema {
    */
   public function alter(Table $table) {
     if (!$this->hasTable($table)) {
-      // TODO: send notice, and log to file, that table doesn't exists.
     } else {
       try {
         // Table exists, alter it.
@@ -204,7 +199,6 @@ class Schema {
       }
       // Write new schema in yaml file.
       $this->updateSchema();
-      // TODO: log in file that everything is done correctly (?).
     }
   }
 
