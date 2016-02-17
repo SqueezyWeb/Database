@@ -770,5 +770,147 @@ class FieldTest extends \PHPUnit_Framework_Testcase {
     );
   }
 
-  // TODO: start from getField().
+  /**
+   * Test for `Field::getField()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Field::__construct
+   * @requires function Freyja\Database\Schema\Field::text
+   * @requires function Freyja\Database\Schema\Field::notNull
+   * @requires function Freyja\Database\Schema\Field::setDefault
+   * @requires function Freyja\Database\Schema\Field::getField
+   */
+  public function testGetField() {
+    $field = new Field('field');
+    $field_info = $field->text()->notNull()->setDefault('ciaone')->getField();
+    $expected = array('field' => array(
+      'type' => 'TEXT',
+      'default' => '\'ciaone\'',
+      'NOT NULL' => true,
+      'UNSIGNED' => false,
+      'AUTO_INCREMENT' => false
+    ));
+
+    $this->assertEquals(
+      $field_info,
+      $expected,
+      'Failed asserting that Field::getField() correctly retrieves the field information.'
+    );
+  }
+
+  /**
+   * Test for `Field::getField()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Field::__construct
+   * @requires function Freyja\Database\Schema\Field::integer
+   * @requires function Freyja\Database\Schema\Field::unsigned
+   * @requires function Freyja\Database\Schema\Field::getField
+   */
+  public function testGetFieldWithLength() {
+    $field = new Field('field');
+    $field_info = $field->integer(5)->unsigned()->getField();
+    $expected = array('field' => array(
+      'type' => 'INT(5)',
+      'default' => null,
+      'NOT NULL' => false,
+      'UNSIGNED' => true,
+      'AUTO_INCREMENT' => false
+    ));
+
+    $this->assertEquals(
+      $field_info,
+      $expected,
+      'Failed asserting that Field::getField() correctly retrieves the field information, in particular the type with the length.'
+    );
+  }
+
+  /**
+   * Test for `Field::getField()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Field::__construct
+   * @requires function Freyja\Database\Schema\Field::float
+   * @requires function Freyja\Database\Schema\Field::setDefault
+   * @requires function Freyja\Database\Schema\Field::autoIncrement
+   * @requires function Freyja\Database\Schema\Field::notNull
+   * @requires function Freyja\Database\Schema\Field::getField
+   */
+  public function testGetFieldWithLengthAndDecimals() {
+    $field = new Field('field');
+    $field_info = $field->float(28)->setDefault(1.5)->autoIncrement()->notNull()->getField();
+    $expected = array('field' => array(
+      'type' => 'FLOAT(28,2)',
+      'default' => 1.5,
+      'NOT NULL' => true,
+      'UNSIGNED' => false,
+      'AUTO_INCREMENT' => true
+    ));
+
+    $this->assertEquals(
+      $field_info,
+      $expected,
+      'Failed asserting that Field::getField() correctly retrieves the field information, in particular the type with the length and decimals.'
+    );
+  }
+
+  /**
+   * Test for `Field::__toString()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Field::__construct
+   * @requires function Freyja\Database\Schema\Field::integer
+   * @requires function Freyja\Database\Schema\Field::unsigned
+   * @requires function Freyja\Database\Schema\Field::autoIncrement
+   * @requires function Freyja\Database\Schema\Field::decimal
+   * @requires function Freyja\Database\Schema\Field::notNull
+   * @requries function Freyja\Database\Schema\Field::setDefault
+   * @requires function Freyja\Database\Schema\Field::__toString
+   */
+  public function testToString() {
+    $field_1 = new Field('field');
+    $field_1->integer(8)->unsigned()->autoIncrement();
+    $field_1_str = (string) $field_1;
+    $expected = 'field INT(8) UNSIGNED AUTO_INCREMENT';
+    $this->assertEquals(
+      $field_1_str,
+      $expected,
+      'Failed asserting that a field can be correctly cast to string.'
+    );
+
+    $field_2 = new Field('field');
+    $field_2->decimal(8, 5)->unsigned()->notNull()->setDefault(10.456);
+    $field_2_str = (string) $field_2;
+    $expected = 'field DECIMAL(8,5) DEFAULT 10.456 NOT NULL UNSIGNED';
+    $this->assertEquals(
+      $field_2_str,
+      $expected,
+      'Failed asserting that a field can be correctly cast to string.'
+    );
+  }
+
+  /**
+   * Test for `Field::isAutoIncrement()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Field::__construct
+   * @requires function Freyja\Database\Schema\Field::isAutoIncrement
+   */
+  public function testIsAutoIncrement() {
+    $field = new Field('name');
+    $this->assertFalse(
+      $field->isAutoIncrement(),
+      'Failed asserting that Field::isAutoIncrement() correctly state whether the field is auto increment or not.'
+    );
+  }
 }
