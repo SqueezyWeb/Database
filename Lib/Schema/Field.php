@@ -575,10 +575,10 @@ class Field {
     $info['NOT NULL'] = !$this->nullable;
 
     // Push UNSIGNED in the array.
-    $field['UNSIGNED'] = $this->unsigned;
+    $info['UNSIGNED'] = $this->unsigned;
 
     // Push AUTO_INCREMENT in the array.
-    $field['AUTO_INCREMENT'] = $this->auto_increment;
+    $info['AUTO_INCREMENT'] = $this->auto_increment;
 
     // Push the name and the info of the field in the array.
     $field = array($this->name => $info);
