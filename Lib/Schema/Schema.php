@@ -153,7 +153,7 @@ class Schema {
         throw $e;
       }
       // Query ok, update schema property.
-      unset($this->schema['fields'][$table->getName()]);
+      unset($this->schema['tables'][$table->getName()]);
       // Write new schema in yaml file.
       $this->updateSchema();
     }
@@ -245,6 +245,8 @@ class Schema {
 
     // Rewrite yaml file.
     $yaml_string = Yaml::dump($schema);
+    if (!file_exists(getcwd().'/db'))
+      mkdir(getcwd().'/db');
     file_put_contents($this->filename, $yaml_string);
   }
 }
