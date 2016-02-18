@@ -1,0 +1,36 @@
+language: php
+php:
+  - '5.3'
+  - '5.4'
+  - '5.5'
+  - '5.6'
+  - '7.0'
+  # - hhvm
+  - nightly
+
+env:
+  global:
+    secure: "MaaXjeYGf0r55XDFLbS+Ng1scXHLTILaKJAdUq+5uXFZFrq8ofA2nzhBItqtkg7nbg0S2VZCzqmYhtlodchLz3mUMcI1zVH4U4ZbzBTELC7Sc786UyN9U+QEi/Ez39pazbKHfta0wDMem6Ak1XuK+k0J093xLNKwuTfZnfkRSEgypAWKpoqLX24RQ/Gq5AJbS6nHYu9FVxaJdcW3POwNJpA1ZjV1OYDsRgTfouIJJclm6QMwklOKmy8DLvWE/LoyfigqlfrNlgnmfLc51aCbR4p4k3hvhtg1jbE2ZdKvzIGzsmsvs9WtDRwgjs01hkgjck8OiB82VAsX+Kl7pHa6jMAveio6LHVFDOSx/JyeBk6RWocDlMLtQ/MeSBPWYloKw0bgtskzWzy46mr4kH4PeonUZgoAcfXll5RBOqq5/SnqEtMJc3Qh2XM1He7STQ7XuItX6+XYFnOQSbkYdF0TVv0qms8l3iVySvKwk8JE6whAXd2SwuekGK2s//0OymhDzH4WhlMkzlGbeio2TGHOCPlBgoDl3Q/NSJ89Ys87jMlT9fdl/9ciIctzOw6x8kUsD/bAMTohKQXjjJBjWWwYwQWesCMAo+qYd28V+Wz7McMDNYLw+zxXKfJJTdWaaeh5v8MhKTIr0alpzOiGKi7bijVkTerEmxrQ2L+qW1x4AD8="
+
+notifications:
+  slack:
+    secure: lncKg9lLCPC8E20/vhl6iKkHCXPwLokLfpbcTutpQRvjEd/k+vzU4vBqVeiS5yqKa9/+E8ISz6Ax23QSHBDTdO9SYfFgYcQLSt0qQ61ERI5RyA7KJky8gXrSBmPF46T1lzTPP7JGRlwkIzh0V3txz259bx40oKPvIjiIAVu/oT7U5GX1zxeTgjkDqKFXK3RgWZtf+v5ro3DCYNMmapx3uq0f7BsdQe/M5RN8EXZEiSRHELb4aXneqU8JU4oGkL/BcM1hwzmvvUaYJ2I8Y55p7QKUABgV+D8KthZ2l+x//KB0hYwQxFnsVUrPWKcRiM29GBrLmfQ6ikrGlrwxVM9JhHPZztWB3sF1YybF2yMQoIP/oOYIHw41DvOdi5eOazms/OzRxrw7VWFH2gynAypposLrMAR5y0rURo7SLsEHELIZ6UHN5No2pf/q6tDYwDdLgqX28FR4skObvQHxKqzFtqMofAI0UrF8275zt+1dwqTEjOjwdycCT8hLFkEWGVHb06ObLdQFDv9dq79or3gtGOPP0c03uxmkldHGMV+7HWxc+6y8mVmKBJbLB9UxynvJtb1co1UaacznmbcSEPtE7QrN6pmgLsFXyrWcRjOoiB7BCHB/1cv13WuIUr+Q71DQBNx16pL+fRjNwnhqUO8myP1y8wee3+9BGs73+7LPZsU=
+
+before_install:
+  - sudo apt-get install -y graphviz
+  # - printf "\n" | pecl install intl
+  - phpenv config-add xsl.ini
+
+install:
+  - composer install
+
+before_script:
+  # phpDocumentor
+  - mkdir -p docs
+  # PHPUnit
+  - mkdir -p coverage
+
+after_success:
+  - ./vendor/bin/phpdoc
+  # phpDocumentor
+  - bash .travis_after_script.sh
