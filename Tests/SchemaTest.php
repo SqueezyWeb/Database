@@ -157,8 +157,10 @@ class SchemaTest extends FixtureTestCase {
    * @requires function Freyja\Database\Database::__construct
    * @requires function Freyja\Database\Database::connect
    * @requires function Freyja\Database\Driver\MySqlDriver::connect
+   *
+   * @dataProvider removeProvider
    */
-  public function testRemove() {
+  public function testRemove($table) {
     // Load data.
     $ds = $this->getDataSet(array('customers'));
     $this->loadDataSet($ds);
@@ -166,7 +168,6 @@ class SchemaTest extends FixtureTestCase {
     $reflection_schema = new ReflectionProperty('Freyja\Database\Schema\Schema', 'schema');
     $reflection_schema->setAccessible(true);
 
-    $table = new Table('customers');
     $db = new Database(new MySqlDriver);
     $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
     $schema->remove($table);
@@ -178,14 +179,165 @@ class SchemaTest extends FixtureTestCase {
 
     $message = '';
     try {
-      $result = $this->getConnection()->getConnection()->exec('SELECT * FROM customers');
+      $result = $this->getConnection()->getConnection()->query('SELECT * FROM customers');
     } catch (\PDOException $e) {
       $message = $e->getMessage();
     }
     $this->assertEquals(
-      $message,
       'SQLSTATE[42S02]: Base table or view not found: 1146 Table \'test.customers\' doesn\'t exist',
+      $message,
       'Failed asserting that Schema::remove() correctly drop a table from the database.'
     );
+
+    // Reload original schema.
+    self::setUpBeforeClass();
+  }
+
+  /**
+   * Data Provider for `testRemove()`.
+   *
+   * @since 1.0.0
+   * @access public
+   */
+  public function removeProvider() {
+    return array(
+      'object table' => array(new Table('customers')),
+      'string table' => array('customers')
+    );
+  }
+
+  /**
+   * Test for `Schema::remove()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Schema::__construct
+   * @requires function Freyja\Database\Schema\Schema::remove
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument table. String or Freyja\Database\Schema\Table expected, array given instead.
+   */
+  public function testRemoveWithInvalidData() {
+    $db = new Database(new MySqlDriver);
+    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema->remove(array());
+  }
+
+  /**
+   * Test for `Schema::alter()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Schema::__construct
+   * @requires function Freyja\Database\Driver\MySqlDriver::connect
+   * @requires function Freyja\Database\Database::__construct
+   * @requires function Freyja\Database\Database::connect
+   * @requires function Freyja\Database\Schema\Table::__construct
+   * @requires function ReflectionProperty::setAccessible
+   * @requires function ReflectionProperty::getValue
+   */
+  public function testAlter() {
+    // Set accessibility to object property.
+    $reflection_schema = new ReflectionProperty('Freyja\Database\Schema\Schema', 'schema');
+    $reflection_schema->setAccessible(true);
+
+    $field = new Field('new_field');
+    $fields = array($field->varchar(200));
+    $table = new Table('customers');
+    $db = new Database(new MySqlDriver);
+    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema->alter($table->addFields($fields));
+    $retr_schema = $reflection_schema->getValue($schema);
+    $this->assertTrue(
+      isset($retr_schema['tables']['customers']['fields']['new_field']),
+      'Failed asserting that Schema::alter() correctly add the new field to the database schema.'
+    );
+    $expected_schema_field = array(
+      'type' => 'VARCHAR(200)',
+      'default' => null,
+      'NOT NULL' => false,
+      'UNSIGNED' => false,
+      'AUTO_INCREMENT' => false
+    );
+    $this->assertEquals(
+      $expected_schema_field,
+      $retr_schema['tables']['customers']['fields']['new_field'],
+      'Failed asserting that Schema::alter() correctly add the new field information to the database schema.'
+    );
+
+    $message = '';
+    try {
+      $result = $this->getConnection()->getConnection()->query('SELECT new_field FROM customers');
+    } catch (\PDOException $e) {
+      $message = $e->getMessage();
+    }
+
+    $this->assertFalse(
+      $message == 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'new_field\' in \'field list\'',
+      'Failed asserting that Schema::alter() correctly alter a table.'
+    );
+  }
+
+  /**
+   * Test for `Schema::hasTable()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Schema::__construct
+   * @requires function Freyja\Database\Driver\MySqlDriver::connect
+   * @requires function Freyja\Database\Database::__construct
+   * @requires function Freyja\Database\Database::connect
+   * @requires function Freyja\Database\Schema\Schema::hasTable
+   *
+   * @dataProvider hasTableProvider
+   */
+  public function testHasTable($table, $not_existing_table) {
+    $db = new Database(new MySqlDriver);
+    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $this->assertTrue(
+      $schema->hasTable($table),
+      'Failed asserting that Schema::hasTable() correctly state whether the specified table exists or not.'
+    );
+    $this->assertFalse(
+      $schema->hasTable($not_existing_table),
+      'Failed asserting that Schema::hasTable() correctly state whether the specified table exists or not.'
+    );
+  }
+
+  /**
+   * Data Provider for `testHasTable()`.
+   *
+   * @since 1.0.0
+   * @access public
+   */
+  public function hasTableProvider() {
+    return array(
+      'object table' => array(new Table('customers'), new Table('not_existing_table')),
+      'string table' => array('customers', 'not_existing_table')
+    );
+  }
+
+  /**
+   * Test for `Schema::hasTable()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Schema\Schema::__construct
+   * @requires function Freyja\Database\Database::__construct
+   * @requires function Freyja\Database\Database::connect
+   * @requires function Freyja\Database\Driver\MySqlDriver::connect
+   * @requires function Freyja\Database\Schema\Schema::hasTable
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument table. String or Freyja\Database\Schema\Table expected, array given instead.
+   */
+  public function testHasTableWithInvalidArgument() {
+    $db = new Database(new MySqlDriver);
+    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema->hasTable(array());
   }
 }
