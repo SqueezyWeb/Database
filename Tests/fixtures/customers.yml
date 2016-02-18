@@ -1,0 +1,11 @@
+customers:
+  -
+    customer_id: 1
+    name: "Tizio"
+    surname: "Caio"
+    email: "tizio.caio@email.address"
+  -
+    customer_id: 2
+    name: "Altro Tizio"
+    surname: "Altro Caio"
+    email: "altro.tiziocaio@email.address"
