@@ -746,25 +746,26 @@ class MySqlQuery extends Query implements QueryInterface {
    * Any string value MUST be put between delimiters, so
    * `MySqlQuery::getDelimiter()` MUST be called before and after every string
    * value.
-   * @see MySqlQuery::getDelimiter
+   *
    * Note that calling this method will replace every other where clauses
    * previously set. Otherwise, calling other where methods after this one will
    * append other clauses to the one set by this method.
+   * @see MySqlQuery::getDelimiter
    *
    * @since 1.0.0
    * @access public
    *
-   * @param string $where_clause
+   * @param string $where
    * @return self
    *
    * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a
    * string.
    */
-  public function whereRaw($where_clause) {
-    if (!is_string($where_clause))
-      throw InvalidArgumentException::typeMismatch('where_clause', $where_clause, 'String');
+  public function whereRaw($where) {
+    if (!is_string($where))
+      throw InvalidArgumentException::typeMismatch('where', $where, 'String');
 
-    $this->where = $where_clause;
+    $this->where = $where;
     return $this;
   }
 
@@ -825,7 +826,7 @@ class MySqlQuery extends Query implements QueryInterface {
       // it is the 3rd element)
       $count = 0;
       foreach ($arg as $element) {
-        if (!is_scalar($element) && !(is_array($element) && $count == 2))
+        if (!is_scalar($element) && !is_null($element) && !(is_array($element) && $count == 2))
           throw new InvalidArgumentException(sprintf(
             'Some elements of some clauses passed to `MySqlQuery::%s()` are invalid',
             $method
