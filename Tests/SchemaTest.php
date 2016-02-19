@@ -75,7 +75,7 @@ class SchemaTest extends FixtureTestCase {
     $reflection_schema->setAccessible(true);
 
     $database = new Database(new MySqlDriver);
-    $schema = new Schema($database->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($database->connect('localhost', 'test', 'travis', ''));
     $retrieved_schema = Yaml::parse(file_get_contents(getcwd().'/db/schema.yml'));
 
     $this->assertEquals(
@@ -113,7 +113,7 @@ class SchemaTest extends FixtureTestCase {
     $quantity->varchar(200);
     $prods = new Table('products', array($prod_id, $name, $quantity));
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->create($prods);
     $query = new MySqlQuery;
     $query->table('products')->insert(array('product_id'=>null, 'name'=>null, 'quantity'=>null));
@@ -169,7 +169,7 @@ class SchemaTest extends FixtureTestCase {
     $reflection_schema->setAccessible(true);
 
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->remove($table);
     $retr_schema = $reflection_schema->getValue($schema);
     $this->assertFalse(
@@ -220,7 +220,7 @@ class SchemaTest extends FixtureTestCase {
    */
   public function testRemoveWithInvalidData() {
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->remove(array());
   }
 
@@ -247,7 +247,7 @@ class SchemaTest extends FixtureTestCase {
     $fields = array($field->varchar(200));
     $table = new Table('customers');
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->alter($table->addFields($fields));
     $retr_schema = $reflection_schema->getValue($schema);
     $this->assertTrue(
@@ -296,7 +296,7 @@ class SchemaTest extends FixtureTestCase {
    */
   public function testHasTable($table, $not_existing_table) {
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $this->assertTrue(
       $schema->hasTable($table),
       'Failed asserting that Schema::hasTable() correctly state whether the specified table exists or not.'
@@ -337,7 +337,7 @@ class SchemaTest extends FixtureTestCase {
    */
   public function testHasTableWithInvalidArgument() {
     $db = new Database(new MySqlDriver);
-    $schema = new Schema($db->connect('localhost', 'test', 'gian', 'gian'));
+    $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->hasTable(array());
   }
 }

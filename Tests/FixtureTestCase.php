@@ -96,7 +96,7 @@ class FixtureTestCase extends \PHPUnit_Extensions_Database_Testcase {
   public function getConnection() {
     if ($this->connection == null) {
       try {
-        $pdo = new PDO('mysql:host=localhost;dbname=test', 'gian', 'gian');
+        $pdo = new PDO('mysql:host=localhost;dbname=test', 'travis', '');
         $this->connection = $this->createDefaultDBConnection($pdo, 'test');
         // $this->connection = new mysqli('localhost', 'gian', 'gian', 'test');
       } catch(Exception $e) {

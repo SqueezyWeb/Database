@@ -41,7 +41,7 @@ class DatabaseTest extends FixtureTestCase {
 
     $driver = new MySqlDriver;
     $db = new Database($driver);
-    $db->connect('localhost', 'test', 'gian', 'gian');
+    $db->connect('localhost', 'test', 'travis', '');
     $connection = $reflection_connection->getValue($driver);
 
     $this->assertNull(
@@ -90,7 +90,7 @@ class DatabaseTest extends FixtureTestCase {
     $query->table('customers')->select(array());
     $driver = new MySqlDriver;
     $db = new Database($driver);
-    $result = $db->connect('localhost', 'test', 'gian', 'gian')->execute($query)->get();
+    $result = $db->connect('localhost', 'test', 'travis', '')->execute($query)->get();
     $expected_result = array(array(
       'customer_id' => '1',
       'name' => 'Tizio',
@@ -129,7 +129,7 @@ class DatabaseTest extends FixtureTestCase {
     $query->table('customers')->select(array());
     $driver = new MySqlDriver;
     $db = new Database($driver);
-    $result = $db->connect('localhost', 'test', 'gian', 'gian')->execute($query)->first();
+    $result = $db->connect('localhost', 'test', 'travis', '')->execute($query)->first();
     $expected_result = array(
       'customer_id' => '1',
       'name' => 'Tizio',
@@ -159,6 +159,6 @@ class DatabaseTest extends FixtureTestCase {
   public function testGetWithoutExecutingAnyQuery() {
     $driver = new MySqlDriver;
     $db = new Database($driver);
-    $db->connect('localhost', 'test', 'gian', 'gian')->get();
+    $db->connect('localhost', 'test', 'travis', '')->get();
   }
 }

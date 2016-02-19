@@ -46,7 +46,7 @@ class MySqlDriverTest extends FixtureTestCase {
     $reflection_connection->setAccessible(true);
 
     $driver = new MySqlDriver;
-    $driver->connect('localhost', 'test', 'gian', 'gian');
+    $driver->connect('localhost', 'test', 'travis', '');
     $driver_connection = $reflection_connection->getValue($driver);
 
     $this->assertNull(
@@ -91,7 +91,7 @@ class MySqlDriverTest extends FixtureTestCase {
     $query->table('customers')->select(array('name', 'surname'))->where('customer_id', 1);
 
     $driver = new MySqlDriver;
-    $result = $driver->connect('localhost', 'test', 'gian', 'gian')->execute($query);
+    $result = $driver->connect('localhost', 'test', 'travis', '')->execute($query);
 
     $this->assertEquals(
       $result[0]['name'],
@@ -124,7 +124,7 @@ class MySqlDriverTest extends FixtureTestCase {
     $query->table('customers')->select('email')->where('name', 'Tizio');
 
     $driver = new MySqlDriver;
-    $result = $driver->connect('localhost', 'test', 'gian', 'gian')->execute($query);
+    $result = $driver->connect('localhost', 'test', 'travis', '')->execute($query);
 
     $this->assertEquals(
       $result[0]['email'],

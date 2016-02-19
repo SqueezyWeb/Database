@@ -8,6 +8,9 @@ php:
   # - hhvm
   - nightly
 
+services:
+  - mysql
+
 env:
   global:
     secure: "MaaXjeYGf0r55XDFLbS+Ng1scXHLTILaKJAdUq+5uXFZFrq8ofA2nzhBItqtkg7nbg0S2VZCzqmYhtlodchLz3mUMcI1zVH4U4ZbzBTELC7Sc786UyN9U+QEi/Ez39pazbKHfta0wDMem6Ak1XuK+k0J093xLNKwuTfZnfkRSEgypAWKpoqLX24RQ/Gq5AJbS6nHYu9FVxaJdcW3POwNJpA1ZjV1OYDsRgTfouIJJclm6QMwklOKmy8DLvWE/LoyfigqlfrNlgnmfLc51aCbR4p4k3hvhtg1jbE2ZdKvzIGzsmsvs9WtDRwgjs01hkgjck8OiB82VAsX+Kl7pHa6jMAveio6LHVFDOSx/JyeBk6RWocDlMLtQ/MeSBPWYloKw0bgtskzWzy46mr4kH4PeonUZgoAcfXll5RBOqq5/SnqEtMJc3Qh2XM1He7STQ7XuItX6+XYFnOQSbkYdF0TVv0qms8l3iVySvKwk8JE6whAXd2SwuekGK2s//0OymhDzH4WhlMkzlGbeio2TGHOCPlBgoDl3Q/NSJ89Ys87jMlT9fdl/9ciIctzOw6x8kUsD/bAMTohKQXjjJBjWWwYwQWesCMAo+qYd28V+Wz7McMDNYLw+zxXKfJJTdWaaeh5v8MhKTIr0alpzOiGKi7bijVkTerEmxrQ2L+qW1x4AD8="
@@ -25,6 +28,8 @@ install:
   - composer install
 
 before_script:
+  # create mysql database
+  - mysql -e 'create database test;'
   # phpDocumentor
   - mkdir -p docs
   # PHPUnit
