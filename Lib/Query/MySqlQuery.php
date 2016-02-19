@@ -740,6 +740,35 @@ class MySqlQuery extends Query implements QueryInterface {
   }
 
   /**
+   * Set raw where clauses.
+   *
+   * Set the WHERE clause of the query to the specified string.
+   * Any string value MUST be put between delimiters, so
+   * `MySqlQuery::getDelimiter()` MUST be called before and after every string
+   * value.
+   * @see MySqlQuery::getDelimiter
+   * Note that calling this method will replace every other where clauses
+   * previously set. Otherwise, calling other where methods after this one will
+   * append other clauses to the one set by this method.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $where_clause
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a
+   * string.
+   */
+  public function whereRaw($where_clause) {
+    if (!is_string($where_clause))
+      throw InvalidArgumentException::typeMismatch('where_clause', $where_clause, 'String');
+
+    $this->where = $where_clause;
+    return $this;
+  }
+
+  /**
    * Build the query string.
    *
    * @since 1.0.0
