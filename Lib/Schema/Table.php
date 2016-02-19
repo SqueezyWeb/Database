@@ -559,34 +559,36 @@ class Table extends Query implements QueryInterface {
     $query = '';
     try {
       foreach ($this->alter_fields as $type => $fields) {
-        if ($query == '')
-          $query = sprintf('ALTER TABLE %s ', $this->name);
-        elseif (!empty($fields))
-          $query .= ', ';
-        $query .= join(', ', array_map(function($type, $field) {
-          $part = '';
-          $field_info = $field->getField();
-          $field_name = $field->getName();
-          $part .= sprintf(
-            '%1$s %2$s',
-            $type,
-            $field_name
-          );
+        if (!empty($fields)) {
+          if ($query == '')
+            $query = sprintf('ALTER TABLE %s ', $this->name);
+          else
+            $query .= ', ';
+          $query .= join(', ', array_map(function($type, $field) {
+            $part = '';
+            $field_info = $field->getField();
+            $field_name = $field->getName();
+            $part .= sprintf(
+              '%1$s %2$s',
+              $type,
+              $field_name
+            );
 
-          // Prepare string based on the type of the alteration.
-          // The switch is useless at the moment, but it's here in anticipation
-          // of future additions.
-          switch ($type) {
-            case 'ADD':
-              $part .= ' '.$field_info[$field_name]['type'];
-              if (!is_null($field_info[$field_name]['default']))
-                $part .= ' DEFAULT '.$field_info[$field_name]['default'];
-              if ($field_info[$field_name]['NOT NULL'])
-                $part .= ' NOT NULL';
-              break;
-          }
-          return $part;
-        }, array_fill(0, count($fields), $type), array_values($fields)));
+            // Prepare string based on the type of the alteration.
+            // The switch is useless at the moment, but it's here in anticipation
+            // of future additions.
+            switch ($type) {
+              case 'ADD':
+                $part .= ' '.$field_info[$field_name]['type'];
+                if (!is_null($field_info[$field_name]['default']))
+                  $part .= ' DEFAULT '.$field_info[$field_name]['default'];
+                if ($field_info[$field_name]['NOT NULL'])
+                  $part .= ' NOT NULL';
+                break;
+            }
+            return $part;
+          }, array_fill(0, count($fields), $type), array_values($fields)));
+        }
       }
     } catch (ExceptionInterface $e) {
       throw $e;
