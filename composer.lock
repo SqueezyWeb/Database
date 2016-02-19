@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "c8e30182e688974f12385eaecaca7a97",
-    "content-hash": "2b81f2b6b3f9eb5467cc8db9b1c418a2",
+    "hash": "71c4b1bf291814cc331b76b50b4f566b",
+    "content-hash": "c2caa410b3da7dda9b6917ef7f42a125",
     "packages": [
         {
             "name": "freyja/exceptions",
@@ -3754,6 +3754,8 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=5.3.3"
+    },
     "platform-dev": []
 }
