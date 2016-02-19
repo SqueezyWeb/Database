@@ -1,0 +1,28 @@
+language: php
+php:
+- '5.3'
+- '5.4'
+- '5.5'
+- '5.6'
+- '7.0'
+- nightly
+services:
+- mysql
+env:
+  global:
+    secure: MaaXjeYGf0r55XDFLbS+Ng1scXHLTILaKJAdUq+5uXFZFrq8ofA2nzhBItqtkg7nbg0S2VZCzqmYhtlodchLz3mUMcI1zVH4U4ZbzBTELC7Sc786UyN9U+QEi/Ez39pazbKHfta0wDMem6Ak1XuK+k0J093xLNKwuTfZnfkRSEgypAWKpoqLX24RQ/Gq5AJbS6nHYu9FVxaJdcW3POwNJpA1ZjV1OYDsRgTfouIJJclm6QMwklOKmy8DLvWE/LoyfigqlfrNlgnmfLc51aCbR4p4k3hvhtg1jbE2ZdKvzIGzsmsvs9WtDRwgjs01hkgjck8OiB82VAsX+Kl7pHa6jMAveio6LHVFDOSx/JyeBk6RWocDlMLtQ/MeSBPWYloKw0bgtskzWzy46mr4kH4PeonUZgoAcfXll5RBOqq5/SnqEtMJc3Qh2XM1He7STQ7XuItX6+XYFnOQSbkYdF0TVv0qms8l3iVySvKwk8JE6whAXd2SwuekGK2s//0OymhDzH4WhlMkzlGbeio2TGHOCPlBgoDl3Q/NSJ89Ys87jMlT9fdl/9ciIctzOw6x8kUsD/bAMTohKQXjjJBjWWwYwQWesCMAo+qYd28V+Wz7McMDNYLw+zxXKfJJTdWaaeh5v8MhKTIr0alpzOiGKi7bijVkTerEmxrQ2L+qW1x4AD8=
+notifications:
+  slack:
+    secure: HGOWRz4sZ0SMGY0DgHoChzjPPqMmoGJiX8+KaeBoPywS+4INVJt6FDRsdNB7Bnf5ZhAiNLedwc7Hgmd2W2XpgOK5obYbhd8HggFl9xUUZ7PsijkTOV+Hqos+F7vYqMq7J35f0HPAGyAmxSnfJSxEpBeti8/upOVtL6rvOskF+l5MpeGRtt+7Rf21Ua8zy0fazS72JqkC1yO/OlDVw3WoiC549L0GFNlTPDObKlX7rNFCrFqAi8Dskab64dPCX1DUVaJsu6YbeeRnBaWODVt6gX8/4ipyfkVHQNfJf3TspmJ6VsuD37Qp/+N04tfG/Ml25LYfR/s1EjknXBQ9vmMOfb4m/om2VRVzPuZhohF/j50K0Wpxn/3DgxHWe7AW5ZLL0rWqkEdMcg0QXvCuidA2CVUutUbowCLf0/xiXRZaz0y6wt24WO42jVhDajl3cq3e4iWlkDeDrVXaS7DL0bITL6kirQUncipm3YOD1f9nqXatKLhMcvrQ9gXfeEi8yVqdp8BBEsu2XEHsIbuVnTXDJCFTRPsv4QiyXNfPI7nsjlkpCWs1wtprWbLiTzEc4xfsMjYJbOvKkJdnU/HFpH6j8LZPKluh6KSz7kVxqlnFQftyhb24X+VJrrDa437dF3Q7oIePjMpcE8gh6p/UGQirK7V6lWDJjPqY+CZ3B1CQ7HY=
+before_install:
+- sudo apt-get install -y graphviz
+- phpenv config-add xsl.ini
+install:
+- composer install
+before_script:
+- mysql -e 'create database test;'
+- mkdir -p docs
+- mkdir -p coverage
+after_success:
+- "./vendor/bin/phpdoc"
+- bash .travis_after_script.sh

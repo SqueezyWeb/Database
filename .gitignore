@@ -1,0 +1,5 @@
+/vendor/
+/docs/
+/coverage/
+/phpunit.xml
+/logs/
