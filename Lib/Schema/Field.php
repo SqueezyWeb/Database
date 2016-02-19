@@ -446,16 +446,17 @@ class Field {
    * Default `self::NULL`.
    * @return self
    *
-   * @throws Freyja\Exceptions\LogicException if the field is set to NOT NULL.
+   * @throws Freyja\Exceptions\LogicException if 'NULL' is passed as default
+   * value, and the field is set to NOT NULL.
    * @throws Freyja\Exceptions\InvalidArgumentException if $value isn't a
    * scalar.
    */
-  public function default($value = self::NULL) {
+  public function setDefault($value = self::NULL) {
     if ($value == self::NULL && $this->nullable == false)
       throw new LogicException('Cannot set default value to NULL if the field is NOT NULL');
 
     if (!is_scalar($value))
-      throw InvalidArgumentException::typeMismatch('default value', $value, 'Scalar');
+      throw InvalidArgumentException::typeMismatch('value', $value, 'Scalar');
 
     if (is_string($value) && $value != self::NULL)
       $this->default = "'".$value."'";
@@ -497,7 +498,7 @@ class Field {
    * to be UNSIGNED.
    */
   public function unsigned() {
-    if (!isset($this->type) || !in_array($this->type, $this->allowed))
+    if (!isset($this->type) || !in_array($this->type, $this->numeric_types))
       throw new LogicException('The field type cannot be declared UNSIGNED');
 
     $this->unsigned = true;
@@ -516,7 +517,7 @@ class Field {
    * to be AUTO_INCREMENT.
    */
   public function autoIncrement() {
-    if (!isset($this->type) || !in_array($this->type, $this->allowed))
+    if (!isset($this->type) || !in_array($this->type, $this->numeric_types))
       throw new LogicException('The field type cannot be declared AUTO_INCREMENT');
 
     $this->auto_increment = true;
@@ -574,10 +575,10 @@ class Field {
     $info['NOT NULL'] = !$this->nullable;
 
     // Push UNSIGNED in the array.
-    $field['UNSIGNED'] = $this->unsigned;
+    $info['UNSIGNED'] = $this->unsigned;
 
     // Push AUTO_INCREMENT in the array.
-    $field['AUTO_INCREMENT'] = $this->auto_increment;
+    $info['AUTO_INCREMENT'] = $this->auto_increment;
 
     // Push the name and the info of the field in the array.
     $field = array($this->name => $info);
@@ -695,7 +696,7 @@ class Field {
   private function setRealType($type, $length, $default_length, $max_length, $decimals, $default_decimals, $max_decimals) {
     $this->type = $type;
     $this->decimals = self::getLength($decimals, $max_decimals, 0, $default_decimals);
-    $this->length = self::getLength($length, $max_length, max(1, $this->decimals), max($default_length, $this->decimals+1));
+    $this->length = self::getLength($length, $max_length, max(1, $this->decimals+1), max($default_length, $this->decimals+1));
   }
 
   /**
@@ -729,7 +730,6 @@ class Field {
   private static function getLength($length, $max, $min, $default) {
     if (!is_numeric($length) || $length < $min || $length > $max) {
       return (int) $default;
-      // TODO: log in file.
     }
     return (int) $length;
   }

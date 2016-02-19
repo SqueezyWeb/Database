@@ -1,0 +1,33 @@
+test:
+  tables:
+    customers:
+      fields:
+        customer_id:
+          type: "VARCHAR(200)"
+          default:
+          NOT NULL: false
+          UNSIGNED: false
+          AUTO_INCREMENT: false
+        name:
+          type: "VARCHAR(200)"
+          default:
+          NOT NULL: false
+          UNSIGNED: false
+          AUTO_INCREMENT: false
+        surname:
+          type: "VARCHAR(200)"
+          default:
+          NOT NULL: false
+          UNSIGNED: false
+          AUTO_INCREMENT: false
+        email:
+          type: "VARCHAR(200)"
+          default:
+          NOT NULL: false
+          UNSIGNED: false
+          AUTO_INCREMENT: false
+      primary: []
+      foreign: []
+      charset: "utf8"
+      collation: "utf8_unicode_ci"
+      engine: "InnoDB"

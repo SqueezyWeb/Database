@@ -183,9 +183,9 @@ class Table extends Query implements QueryInterface {
    */
   public function primaryKey($field, $name = null) {
     if (!is_string($field) && !is_array($field))
-      throw InvalidArgumentException::typeMismatch('field name(s)', $field, 'Array or String');
+      throw InvalidArgumentException::typeMismatch('field', $field, 'Array or String');
     if (!is_string($name) && !is_null($name))
-      throw InvalidArgumentException::typeMismatch('key name', $name, 'String or null');
+      throw InvalidArgumentException::typeMismatch('name', $name, 'String or null');
 
     if (is_array($field)) {
       if (is_null($name))
@@ -197,6 +197,8 @@ class Table extends Query implements QueryInterface {
           throw new InvalidArgumentException('Field name(s) passed to `Table::primaryKey()` must match the fields of the table');
       }
     } else {
+      if (!array_key_exists($field, $this->fields))
+        throw new InvalidArgumentException('Field name(s) passed to `Table::primaryKey()` must match the fields of the table');
       $field = array($field);
     }
 
@@ -226,9 +228,9 @@ class Table extends Query implements QueryInterface {
     if (!array_key_exists($field, $this->fields))
       throw new InvalidArgumentException('Cannot set a foreign key on a non existing field');
 
-    $this->foreign_keys[$field][] = array(
+    $this->foreign_keys[$field] = array(
       'references' => $table,
-      'on', $referenced_field
+      'on' => $referenced_field
     );
   }
 
@@ -462,7 +464,7 @@ class Table extends Query implements QueryInterface {
         throw InvalidArgumentException::typeMismatch('field', $field, 'Freyja\Database\Schema\Field');
 
     $this->type = 'alter';
-    $this->alter_fields[$type] = array_merge($this->alter_fields, $fields);
+    $this->alter_fields[$type] = array_merge($this->alter_fields[$type], $fields);
     return $this;
   }
 
@@ -485,7 +487,7 @@ class Table extends Query implements QueryInterface {
     $query = 'CREATE TABLE IF NOT EXISTS '.$this->name.' (';
 
     $autoinc_fields = 0;
-    if (empty($fields))
+    if (empty($this->fields))
       throw new LogicException('A table must have at least 1 column');
     try {
       $this->autoinc_field = false;
@@ -504,10 +506,10 @@ class Table extends Query implements QueryInterface {
       );
 
     // Append the FOREIGN KEY constraints, if set.
-    foreach ($this->foreign_keys as $key) {
+    foreach ($this->foreign_keys as $field => $key) {
       $query .= sprintf(
         ', FOREIGN KEY (%1$s) REFERENCES %2$s(%3$s)',
-        $key['field'],
+        $field,
         $key['references'],
         $key['on']
       );
@@ -515,7 +517,7 @@ class Table extends Query implements QueryInterface {
 
     // Append charset, collation and engine.
     $query .= sprintf(
-      ') CHARACTER SET %1$s COLLATION %2$s ENGINE %3$s;',
+      ') CHARACTER SET %1$s COLLATE %2$s ENGINE=%3$s;',
       $this->charset,
       $this->collation,
       $this->engine
@@ -554,10 +556,13 @@ class Table extends Query implements QueryInterface {
    * @see Freyja\Database\Schema\Field::getField()
    */
   private function buildAlter() {
-    $query = sprintf('ALTER TABLE %s ', $this->name);
-
+    $query = '';
     try {
       foreach ($this->alter_fields as $type => $fields) {
+        if ($query == '')
+          $query = sprintf('ALTER TABLE %s ', $this->name);
+        elseif (!empty($fields))
+          $query .= ', ';
         $query .= join(', ', array_map(function($type, $field) {
           $part = '';
           $field_info = $field->getField();
@@ -565,12 +570,12 @@ class Table extends Query implements QueryInterface {
           $part .= sprintf(
             '%1$s %2$s',
             $type,
-            $field_name;
+            $field_name
           );
 
           // Prepare string based on the type of the alteration.
-          // The switch is useless at the moment, but it's here in anticipation of
-          // future additions.
+          // The switch is useless at the moment, but it's here in anticipation
+          // of future additions.
           switch ($type) {
             case 'ADD':
               $part .= ' '.$field_info[$field_name]['type'];
