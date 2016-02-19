@@ -10,6 +10,7 @@
 namespace Freyja\Database\Tests;
 
 use Freyja\Database\Query\MySqlQuery;
+use \ReflectionProperty;
 
 /**
  * MySqlQueryTest class.
@@ -713,5 +714,98 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   public function testWherePassingArrayAndStrings() {
     $query = new MySqlQuery;
     $query->table('table')->select('*')->where(array('field', 'ciaone'), 'field', '=', 56)->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::whereRaw()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::whereRaw
+   * @requires function ReflectionProperty::setAccessible
+   * @requires function ReflectionProperty::getValue
+   */
+  public function testWhereRaw() {
+    // Set accessibility to object property.
+    $reflection_where = new ReflectionProperty('Freyja\Database\Query\MySqlQuery', 'where');
+    $reflection_where->setAccessible(true);
+
+    $query = new MySqlQuery;
+    $query->whereRaw('WHERE field = 56 AND other_field = NULL');
+
+    $this->assertEquals(
+      'WHERE field = 56 AND other_field = NULL',
+      $reflection_where->getValue($query),
+      'Failed asserting that MySqlQuery::whereRaw() correctly set a where clause.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::whereRaw()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::whereRaw
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function ReflectionProperty::setAccessible
+   * @requires function ReflectionProperty::getValue
+   */
+  public function testWhereRawWithChainedWhere() {
+    // Set accessibility to object property.
+    $reflection_where = new ReflectionProperty('Freyja\Database\Query\MySqlQuery', 'where');
+    $reflection_where->setAccessible(true);
+
+    $query = new MySqlQuery;
+    $query->whereRaw('WHERE field = 56')->where('other_field', null);
+
+    $this->assertEquals(
+      'WHERE field = 56 AND other_field = NULL',
+      $reflection_where->getValue($query),
+      'Failed asserting that MySqlQuery::whereRaw() correctly set a where clause, if chained by MySqlQuery::where().'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::whereRaw()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::whereRaw
+   * @requires function Freyja\Database\Query\MySqlQuery::where
+   * @requires function ReflectionProperty::setAccessible
+   * @requires function ReflectionProperty::getValue
+   */
+  public function testWhereRawChainedAfterWhere() {
+    // Set accessibility to object property.
+    $reflection_where = new ReflectionProperty('Freyja\Database\Query\MySqlQuery', 'where');
+    $reflection_where->setAccessible(true);
+
+    $query = new MySqlQuery;
+    $query->where('other_field', null)->whereRaw('WHERE field = 56');
+
+    $this->assertEquals(
+      'WHERE field = 56',
+      $reflection_where->getValue($query),
+      'Failed asserting that MySqlQuery::whereRaw() correctly set a where clause, if chained after MySqlQuery::where().'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::whereRaw()`.
+   *
+   * @since 1.0.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::whereRaw
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument where. String expected, array given instead.
+   */
+  public function testWhereRawWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->whereRaw(array());
   }
 }
