@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "71c4b1bf291814cc331b76b50b4f566b",
-    "content-hash": "c2caa410b3da7dda9b6917ef7f42a125",
+    "hash": "8e0fc0ae466c16a1dcc3e92511f01cc5",
+    "content-hash": "aaf1064e3d8e9a9036beb006d7489e0b",
     "packages": [
         {
             "name": "freyja/exceptions",
@@ -2637,29 +2637,30 @@
         },
         {
             "name": "symfony/filesystem",
-            "version": "3.0.x-dev",
+            "version": "2.3.x-dev",
+            "target-dir": "Symfony/Component/Filesystem",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
-                "reference": "064ac12afd2ceb8a2c1bfb7bed8e931c6dd1997f"
+                "reference": "c478755a08292d504bc8bc0cf2353d7303f7d068"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/064ac12afd2ceb8a2c1bfb7bed8e931c6dd1997f",
-                "reference": "064ac12afd2ceb8a2c1bfb7bed8e931c6dd1997f",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/c478755a08292d504bc8bc0cf2353d7303f7d068",
+                "reference": "c478755a08292d504bc8bc0cf2353d7303f7d068",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.5.9"
+                "php": ">=5.3.3"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0-dev"
+                    "dev-master": "2.3-dev"
                 }
             },
             "autoload": {
-                "psr-4": {
+                "psr-0": {
                     "Symfony\\Component\\Filesystem\\": ""
                 },
                 "exclude-from-classmap": [
@@ -2682,7 +2683,7 @@
             ],
             "description": "Symfony Filesystem Component",
             "homepage": "https://symfony.com",
-            "time": "2016-01-27 11:34:55"
+            "time": "2016-02-18 15:12:50"
         },
         {
             "name": "symfony/finder",
