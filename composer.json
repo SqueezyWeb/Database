@@ -28,5 +28,10 @@
         "Freyja\\Database\\": "Lib/",
         "Freyja\\Database\\Tests\\": "Tests/"
       }
+    },
+    "extra": {
+      "branch-alias": {
+        "dev-develop": "0.2.x-dev"
+      }
     }
 }
