@@ -18,7 +18,7 @@ use \ReflectionProperty;
  * @package Freyja\Database\Tests
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   /**
@@ -252,17 +252,105 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
    */
   public function testInsert() {
     $query = new MySqlQuery;
-    $query_str = $query->table('table')->insert(array(
-      'field' => 'ciaone',
-      'another_field' => 56
-    ))->build();
+    $query_str = $query->table('table')->insert(
+      array('field', 'another_field'),
+      array(array('ciaone', 56))
+    )->build();
     $expected_str = 'INSERT INTO table (field, another_field) VALUES (\'{esc}ciaone{esc}\', 56)';
 
     $this->assertEquals(
-      $query_str,
       $expected_str,
+      $query_str,
       'Failed asserting that MySqlQuery correctly build an insert query.'
     );
+  }
+
+  /**
+   * Test for `MySqlQuery::insert()`.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::insert
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testInsertWithMultipleRows() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->insert(
+      array('field', 'another_field'),
+      array(array('ciaone', 56), array('another_ciaone', 'another_56'), array('booh', 0))
+    )->build();
+    $expected_str = 'INSERT INTO table (field, another_field) VALUES (\'{esc}ciaone{esc}\', 56), (\'{esc}another_ciaone{esc}\', \'{esc}another_56{esc}\'), (\'{esc}booh{esc}\', 0)';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build an insert query with multiple rows.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::insert()`.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::insert
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument fields (one of its elements). String expected, array given instead.
+   */
+  public function testInsertWithInvalidFields() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->insert(
+      array(array(), 'another_field'),
+      array(array('ciaone', 56), array('another_ciaone', 'another_56'), array('booh', 0))
+    )->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::insert()`.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::insert
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument values (one of its elements). Array expected, string given instead.
+   */
+  public function testInsertWithInvalidValues() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->insert(
+      array('field', 'another_field'),
+      array('ciaone', array('another_ciaone', 'another_56'), array('booh', 0))
+    )->build();
+  }
+
+  /**
+   * Test for `MySqlQuery::insert()`.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::insert
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Every internal array of arguments second argument must be equal to first argument length
+   */
+  public function testInsertWithDifferentNumberOfFieldsAndValues() {
+    $query = new MySqlQuery;
+    $query_str = $query->table('table')->insert(
+      array('field', 'another_field'),
+      array(array('ciaone', 56, 56), array('another_ciaone', 'another_56'), array('booh', 0))
+    )->build();
   }
 
   /**
