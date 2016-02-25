@@ -116,7 +116,7 @@ class SchemaTest extends FixtureTestCase {
     $schema = new Schema($db->connect('localhost', 'test', 'travis', ''));
     $schema->create($prods);
     $query = new MySqlQuery;
-    $query->table('products')->insert(array('product_id'=>null, 'name'=>null, 'quantity'=>null));
+    $query->table('products')->insert(array('product_id', 'name', 'quantity'), array(array(null, null, null)));
     $db->execute($query);
 
     $query_table = $this->getConnection()->createQueryTable('products', 'SELECT * FROM products');
