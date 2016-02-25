@@ -19,7 +19,7 @@ use Freyja\Exceptions\ExceptionInterface;
  * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class MySqlQuery extends Query implements QueryInterface {
   /**
@@ -108,16 +108,26 @@ class MySqlQuery extends Query implements QueryInterface {
   private $update = array();
 
   /**
-   * INSERT fields and values.
+   * INSERT fields.
    *
-   * Associative array `key => value`, where `key` is the fields to insert, and
-   * `value` is the new value.
-   *
+   * @since 1.1.0 Change name and behaviour.
    * @since 1.0.0
    * @access private
    * @var array
    */
-  private $insert = array();
+  private $insert_fields = array();
+
+  /**
+   * INSERT values.
+   *
+   * Array containing one array for each set of data. Every internal array must
+   * have the same length of $insert_fields.
+   *
+   * @since 1.1.0
+   * @access private
+   * @var array
+   */
+  private $insert_values = array();
 
   /**
    * DELETE modifier.
@@ -303,26 +313,48 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Set INSERT fields and values.
    *
+   * Set the values that will be inserted in the specified fields.
+   * Every internal array of $values MUST have the same length of $fields.
+   *
+   * @since 1.1.0 Add argument and various checks to allow inserting more than a
+   * single row to the table.
    * @since 1.0.0
    * @access public
    *
-   * @param array $values Associative array `key => value`, where `key` is the
-   * field and `value` is the new value.
+   * @param array $fields Array of strings, every of which is a field name.
+   * @param array $values Array containing arrays, every of which represents a
+   * row of values to insert.
    * @return self
    *
-   * @throws Freyja\Exceptions\RuntimeException if values in $values aren't
-   * scalars.
+   * @throws Freyja\Exceptions\InvalidArgumentException if elements of $fields
+   * aren't strings, or if elements of $values aren't arrays, or if the length
+   * of $fields isn't equal to the length of each internal array of $values.
+   * @throws Freyja\Exceptions\RuntimeException if elements of the internal
+   * arrays of $values aren't valid.
    */
-  public function insert(array $values) {
-    foreach ($values as &$value) {
-      try {
-        $value = $this->correctValue($value, 'update');
-      } catch (ExceptionInterface $e) {
-        throw $e;
+  public function insert(array $fields, array $values) {
+    foreach ($fields as $field)
+      if (!is_string($field))
+        throw InvalidArgumentException::typeMismatch('fields (one of its elements)', $field, 'String');
+    $length = count($fields);
+    foreach ($values as &$row) {
+      if (!is_array($row))
+        throw InvalidArgumentException::typeMismatch('values (one of its elements)', $row, 'Array');
+      if (count($row) != $length)
+        throw new InvalidArgumentException(
+          'Every internal array of arguments second argument must be equal to first argument length'
+        );
+      foreach ($row as &$value) {
+        try {
+          $value = $this->correctValue($value, 'insert');
+        } catch (ExceptionInterface $e) {
+          throw $e;
+        }
       }
     }
 
-    $this->insert = $values;
+    $this->insert_fields = $fields;
+    $this->insert_values = $values;
     $this->type = 'insert';
 
     return $this;
@@ -1162,6 +1194,8 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Build INSERT query.
    *
+   * @since 1.1.0 Add check and modify outputed query to allow the insertion of
+   * more than a single row to the table.
    * @since 1.0.0
    * @access private
    *
@@ -1174,14 +1208,18 @@ class MySqlQuery extends Query implements QueryInterface {
     // `INSERT INTO` part.
     if (!isset($this->table))
       throw new RuntimeException('Cannot execute the query without a target table');
-    if (!isset($this->insert) || empty($this->insert))
+    if (!isset($this->insert_values) || empty($this->insert_values))
       throw new RuntimeException('Cannot execute an INSERT query without inserting anything');
+    if (!isset($this->insert_fields) || empty($this->insert_fields))
+      throw new RuntimeException('You have to specify some fields for an INSERT query');
 
     $query = sprintf(
       'INSERT INTO %1$s (%2$s) VALUES (%3$s)',
       $this->table,
-      join(', ', array_keys($this->insert)),
-      join(', ', array_values($this->insert))
+      join(', ', $this->insert_fields),
+      join('), (', array_map(function($row) {
+        return join(', ', $row);
+      }, $this->insert_values))
     );
 
     return $query;
