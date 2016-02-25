@@ -17,6 +17,7 @@ notifications:
 before_install:
 - sudo apt-get install -y graphviz
 - phpenv config-add xsl.ini
+- composer self-update
 install:
 - composer install
 before_script:
