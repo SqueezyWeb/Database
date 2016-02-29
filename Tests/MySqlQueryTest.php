@@ -18,7 +18,7 @@ use \ReflectionProperty;
  * @package Freyja\Database\Tests
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   /**
@@ -64,6 +64,30 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
       $query_str,
       $expected_str,
       'Failed asserting that MySqlQuery correctly build a select query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::distinct()`.
+   *
+   * @since 1.2.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::distinct
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testDistinct() {
+    $query = new MySqlQuery;
+    $query->table('table')->select(array('field1', 'field2'))->distinct();
+    $query_str = $query->build();
+    $expected_str = 'SELECT DISTINCT field1, field2 FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a `SELECT DISTINCT` query.'
     );
   }
 

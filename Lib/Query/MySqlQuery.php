@@ -19,7 +19,7 @@ use Freyja\Exceptions\ExceptionInterface;
  * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 class MySqlQuery extends Query implements QueryInterface {
   /**
@@ -50,6 +50,15 @@ class MySqlQuery extends Query implements QueryInterface {
    * @var array
    */
   private $select = array();
+
+  /**
+   * Whether SELECT is DISTINCT or not.
+   *
+   * @since 1.2.0
+   * @access private
+   * @var boolean
+   */
+  private $distinct = false;
 
   /**
    * COUNT.
@@ -256,6 +265,19 @@ class MySqlQuery extends Query implements QueryInterface {
     $this->select = $fields;
     $this->type = 'select';
 
+    return $this;
+  }
+
+  /**
+   * Select different (DISTINCT) values.
+   *
+   * @since 1.2.0
+   * @access public
+   *
+   * @return self
+   */
+  public function distinct() {
+    $this->distinct = true;
     return $this;
   }
 
@@ -1051,6 +1073,7 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Build SELECT query string.
    *
+   * @since 1.2.0 Add DISTINCT selection.
    * @since 1.0.0
    * @access private
    *
@@ -1063,7 +1086,10 @@ class MySqlQuery extends Query implements QueryInterface {
       throw new RuntimeException('Cannot execute the query without a target table');
 
     // Create the `SELECT` part.
-    $query = 'SELECT ';
+    $query = sprintf(
+      'SELECT %s',
+      $this->distinct ? 'DISTINCT ' : ''
+    );
     if (!is_array($this->select) || empty($this->select)) {
       $part = $this->buildCount();
       if ($part == '')
