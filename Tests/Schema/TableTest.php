@@ -7,7 +7,7 @@
  * @since 0.1.0
  */
 
-namespace Freyja\Database\Tests;
+namespace Freyja\Database\Tests\Schema;
 
 use Freyja\Database\Schema\Table;
 use Freyja\Database\Schema\Field;

@@ -7,7 +7,7 @@
  * @since 0.1.0
  */
 
-namespace Freyja\Database\Tests;
+namespace Freyja\Database\Tests\Query;
 
 use Freyja\Database\Query\MySqlQuery;
 use \ReflectionProperty;
