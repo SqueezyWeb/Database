@@ -199,12 +199,14 @@ class Repository implements RepositoryInterface {
 	public function createRepository() {
 		try {
 			$schema = new Schema($this->database);
+      $batch = new Field('batch');
+      $migration = new Field('migration');
 			$schema->create(
 				new Table(
 					$this->table,
 					array(
-						(new Field('batch'))->timestamp()->notNull(),
-						(new Field('migration'))->varchar()->notNull()
+						$batch->timestamp()->notNull(),
+						$migration->varchar()->notNull()
 					)
 				)
 			);
