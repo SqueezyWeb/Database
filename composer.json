@@ -9,10 +9,11 @@
             "email": "gianluca@squeezyweb.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "beta",
     "require": {
       "php": ">=5.3.9",
       "freyja/exceptions": "~2.1.0",
+      "symfony/filesystem": "~2.8.0",
       "symfony/yaml": "~2.8.0"
     },
     "require-dev": {
@@ -20,7 +21,6 @@
       "phpdocumentor/phpdocumentor": "~2.7.0",
       "zendframework/zend-cache": "~2.2.10",
       "dompdf/dompdf": "~0.6.0",
-      "symfony/filesystem": "~2.8.0",
       "symfony/translation": "~2.8.0"
     },
     "autoload": {
