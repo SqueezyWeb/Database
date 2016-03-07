@@ -181,9 +181,10 @@ class Repository implements RepositoryInterface {
 	 */
 	public function getLastBatchNumber() {
 		try {
-			return $this->database->execute(
+			$row = $this->database->execute(
 				$this->getQuery()->select('max(batch) AS batch')
-			)->first()['batch'];
+			)->first();
+      return $row['batch'];
 		} catch (ExceptionInterface $e) {
 			throw $e;
 		}
