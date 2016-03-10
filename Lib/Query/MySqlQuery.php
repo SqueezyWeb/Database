@@ -366,8 +366,6 @@ class MySqlQuery extends Query implements QueryInterface {
    * array, or if its elements aren't strings, or if ithave less than 2 elements.
    */
   public function greatest(array $fields) {
-    if (!is_array($fields))
-      throw InvalidArgumentException::typeMismatch('fields', $fields, 'Array');
     if (count($fields) < 2)
       throw new InvalidArgumentException(sprintf(
         'Array passed to %s must have at least 2 elements.',
