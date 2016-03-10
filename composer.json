@@ -13,6 +13,7 @@
     "require": {
       "php": ">=5.3.9",
       "freyja/exceptions": "~2.1.0",
+      "symfony/filesystem": "~2.8.0",
       "symfony/yaml": "<3.0"
     },
     "require-dev": {

@@ -4,8 +4,13 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
+<<<<<<< HEAD
     "hash": "8f199511ced9171de72c88873774c31c",
     "content-hash": "c6ae9974bc484b7192f5f539478d4a0e",
+=======
+    "hash": "a2fa209f437bdca42234dc3b393403e1",
+    "content-hash": "1587cfe654aa72b33ffee2e5ee8f341b",
+>>>>>>> feature/aggregate_functions
     "packages": [
         {
             "name": "freyja/exceptions",
@@ -39,6 +44,55 @@
             ],
             "description": "Simple library of exceptions.",
             "time": "2016-02-08 12:32:59"
+        },
+        {
+            "name": "symfony/filesystem",
+            "version": "v2.8.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/filesystem.git",
+                "reference": "65cb36b6539b1d446527d60457248f30d045464d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/65cb36b6539b1d446527d60457248f30d045464d",
+                "reference": "65cb36b6539b1d446527d60457248f30d045464d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.8-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Filesystem\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Filesystem Component",
+            "homepage": "https://symfony.com",
+            "time": "2016-02-22 15:02:30"
         },
         {
             "name": "symfony/yaml",
@@ -2630,6 +2684,7 @@
             "time": "2016-01-27 05:14:19"
         },
         {
+<<<<<<< HEAD
             "name": "symfony/filesystem",
             "version": "v2.8.3",
             "source": {
@@ -2679,6 +2734,8 @@
             "time": "2016-02-22 15:02:30"
         },
         {
+=======
+>>>>>>> feature/aggregate_functions
             "name": "symfony/finder",
             "version": "v2.8.3",
             "source": {

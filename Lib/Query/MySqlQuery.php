@@ -19,7 +19,7 @@ use Freyja\Exceptions\ExceptionInterface;
  * @package Freyja\Database\Query
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.2.0
+ * @version 1.3.0
  */
 class MySqlQuery extends Query implements QueryInterface {
   /**
@@ -59,18 +59,6 @@ class MySqlQuery extends Query implements QueryInterface {
    * @var boolean
    */
   private $distinct = false;
-
-  /**
-   * COUNT.
-   *
-   * True correspond to `COUNT(*)`. Or array containing the fields to be
-   * counted.
-   *
-   * @since 1.0.0
-   * @access private
-   * @var boolean|array
-   */
-  private $count;
 
   /**
    * ORDERBY.
@@ -282,6 +270,147 @@ class MySqlQuery extends Query implements QueryInterface {
   }
 
   /**
+   * Set a select max.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function max($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('MAX(%s)', $field));
+  }
+
+  /**
+   * Set a select min.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function min($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('MIN(%s)', $field));
+  }
+
+  /**
+   * Set a select sum.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function sum($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('SUM(%s)', $field));
+  }
+
+  /**
+   * Set a select avg.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function avg($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('AVG(%s)', $field));
+  }
+
+  /**
+   * Set a select count.
+   *
+   * @since 1.3.0 Change behaviour.
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function count($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('COUNT(%s)', $field));
+  }
+
+  /**
+   * Set a select greatest.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param array $field Field names.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't an
+   * array, or if its elements aren't strings, or if ithave less than 2 elements.
+   */
+  public function greatest(array $fields) {
+    if (count($fields) < 2)
+      throw new InvalidArgumentException(sprintf(
+        'Array passed to %s must have at least 2 elements.',
+        __METHOD__
+      ));
+    foreach ($fields as $field)
+      if (!is_string($field))
+        throw new InvalidArgumentException(sprintf(
+          'Every element of the array passed to %s must be a string.',
+          __METHOD__
+        ));
+
+    return $this->select(sprintf('GREATEST(%s)', join(', ', $fields)));
+  }
+
+  /**
+   * Set a select round.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @param int $decimals Optional. Number of decimals to be returned. Default 0.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if first argument isn't
+   * a string or if second parameter isn't an integer.
+   */
+  public function round($field, $decimals = 0) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+    if (!is_int($decimals))
+      throw InvalidArgumentException::typeMismatch('decimals', $decimals, 'Integer');
+
+    return $this->select(sprintf('ROUND(%1$s, %2$s)', $field, $decimals));
+  }
+
+  /**
    * Set UPDATE fields and values.
    *
    * @since 1.0.0
@@ -305,29 +434,6 @@ class MySqlQuery extends Query implements QueryInterface {
 
     $this->update = $values;
     $this->type = 'update';
-
-    return $this;
-  }
-
-  /**
-   * Set COUNT.
-   *
-   * Set COUNT to all field or to some specific fields (passing an array
-   * containing strings).
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @param array $count Optional. List of fields to which apply the COUNT
-   * selector. Default: empty array.
-   * @return self
-   */
-  public function count(array $fields = array()) {
-    if (empty($fields))
-      $this->count = true;
-    else
-      $this->count = array_filter($fields, 'is_string');
-    $this->type = 'select';
 
     return $this;
   }
@@ -1091,16 +1197,9 @@ class MySqlQuery extends Query implements QueryInterface {
       $this->distinct ? 'DISTINCT ' : ''
     );
     if (!is_array($this->select) || empty($this->select)) {
-      $part = $this->buildCount();
-      if ($part == '')
-        $query .= '*';
-      else
-        $query .= $part;
+      $query .= '*';
     } else {
       $query .= join(', ', $this->select);
-      $part = $this->buildCount();
-      if ($part != '')
-        $query .= ', '.$part;
     }
 
     // Append the `FROM` part.
@@ -1159,10 +1258,14 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Build COUNT query part.
    *
+   * @deprecated 1.3.0 No longer used by internal code.
+   *
    * @since 1.0.0
    * @access private
    *
    * @return string
+   *
+   * @codeCoverageIgnore
    */
   private function buildCount() {
     $part = '';

@@ -7,7 +7,7 @@
  * @since 0.1.0
  */
 
-namespace Freyja\Database\Tests;
+namespace Freyja\Database\Tests\Query;
 
 use Freyja\Database\Query\MySqlQuery;
 use \ReflectionProperty;
@@ -18,7 +18,7 @@ use \ReflectionProperty;
  * @package Freyja\Database\Tests
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.2.0
+ * @version 1.3.0
  */
 class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   /**
@@ -68,6 +68,327 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
+   * Test for `MySqlQuery::max()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::max
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testMax() {
+    $query = new MySqlQuery;
+    $query->table('table')->max('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT MAX(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select max query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::max()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::max
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testMaxWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->max(array());
+  }
+
+  /**
+   * Test for `MySqlQuery::min()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::min
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testMin() {
+    $query = new MySqlQuery;
+    $query->table('table')->min('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT MIN(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select min query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::min()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::min
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testMinWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->min(array());
+  }
+
+  /**
+   * Test for `MySqlQuery::sum()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::sum
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testSum() {
+    $query = new MySqlQuery;
+    $query->table('table')->sum('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT SUM(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select sum query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::sum()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::sum
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testSumWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->sum(array());
+  }
+
+  /**
+   * Test for `MySqlQuery::avg()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::avg
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testAvg() {
+    $query = new MySqlQuery;
+    $query->table('table')->avg('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT AVG(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select avg query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::avg()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::avg
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testAvgWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->avg(array());
+  }
+
+  /**
+   * Test for `MySqlQuery::count()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testCount() {
+    $query = new MySqlQuery;
+    $query->table('table')->count('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT COUNT(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select count query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::count()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testCountWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->count(array());
+  }
+
+  /**
+   * Test for `MySqlQuery::greatest()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::greatest
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testGreatest() {
+    $query = new MySqlQuery;
+    $query->table('table')->greatest(array('field1', 'field2'));
+    $query_str = $query->build();
+    $expected_str = 'SELECT GREATEST(field1, field2) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select greatest query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::greatest()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::greatest
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Array passed to Freyja\Database\Query\MySqlQuery::greatest must have at least 2 elements.
+   */
+  public function testGreatestWithInvalidNumberOfElementsInArray() {
+    $query = new MySqlQuery;
+    $query->table('table')->greatest(array('field'));
+  }
+
+  /**
+   * Test for `MySqlQuery::greatest()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::greatest
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Every element of the array passed to Freyja\Database\Query\MySqlQuery::greatest must be a string.
+   */
+  public function testGreatestWithInvalidElementsInArray() {
+    $query = new MySqlQuery;
+    $query->table('table')->greatest(array('field', array()));
+  }
+
+  /**
+   * Test for `MySqlQuery::round()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::round
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testRound() {
+    $query = new MySqlQuery;
+    $query->table('table')->round('field', 2);
+    $query_str = $query->build();
+    $expected_str = 'SELECT ROUND(field, 2) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select round query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::round()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::round
+   *
+   * @dataProvider invalidRoundProvider
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   */
+  public function testRoundWithInvalidArgument($field, $decimals) {
+    $query = new MySqlQuery;
+    $query->table('table')->round($field, $decimals);
+  }
+
+  /**
+   * dataProvider of invalid arguments for
+   * `MySqlQueryTest::testRoundWithInvalidArgument()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @return array
+   */
+  public function invalidRoundProvider() {
+    return array(
+      'invalid field' => array(array(), 2),
+      'invalid decimals' => array('field', 'ciaone')
+    );
+  }
+
+  /**
    * Test for `MySqlQuery::distinct()`.
    *
    * @since 1.2.0
@@ -88,73 +409,6 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
       $expected_str,
       $query_str,
       'Failed asserting that MySqlQuery correctly build a `SELECT DISTINCT` query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()`.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testCountWithEmptyFields() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->count()->build();
-    $expected_str = 'SELECT COUNT(*) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a count query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()`
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testCount() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->count(array('field', 'another_field', 56))->build();
-    $expected_str = 'SELECT COUNT(field, another_field) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a count query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()` and `MySqlQuery::select()`.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::select
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testSelectWithCount() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->select('field', 'other_field')->count(array('another_field', 56))->build();
-    $expected_str = 'SELECT field, other_field, COUNT(another_field) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a select query with count.'
     );
   }
 
