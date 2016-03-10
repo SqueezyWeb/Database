@@ -232,6 +232,47 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
   }
 
   /**
+   * Test for `MySqlQuery::count()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   * @requires function Freyja\Database\Query\MySqlQuery::select
+   * @requires function Freyja\Database\Query\MySqlQuery::build
+   */
+  public function testCount() {
+    $query = new MySqlQuery;
+    $query->table('table')->count('field');
+    $query_str = $query->build();
+    $expected_str = 'SELECT COUNT(field) FROM table';
+
+    $this->assertEquals(
+      $expected_str,
+      $query_str,
+      'Failed asserting that MySqlQuery correctly build a select count query.'
+    );
+  }
+
+  /**
+   * Test for `MySqlQuery::count()`.
+   *
+   * @since 1.3.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Query\MySqlQuery::table
+   * @requires function Freyja\Database\Query\MySqlQuery::count
+   *
+   * @expectedException Freyja\Exceptions\InvalidArgumentException
+   * @expectedExceptionMessage Wrong type for argument field. String expected, array given instead.
+   */
+  public function testCountWithInvalidArgument() {
+    $query = new MySqlQuery;
+    $query->table('table')->count(array());
+  }
+
+  /**
    * Test for `MySqlQuery::greatest()`.
    *
    * @since 1.3.0
@@ -368,73 +409,6 @@ class MySqlQueryTest extends \PHPUnit_Framework_Testcase {
       $expected_str,
       $query_str,
       'Failed asserting that MySqlQuery correctly build a `SELECT DISTINCT` query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()`.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testCountWithEmptyFields() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->count()->build();
-    $expected_str = 'SELECT COUNT(*) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a count query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()`
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testCount() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->count(array('field', 'another_field', 56))->build();
-    $expected_str = 'SELECT COUNT(field, another_field) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a count query.'
-    );
-  }
-
-  /**
-   * Test for `MySqlQuery::count()` and `MySqlQuery::select()`.
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @requires function Freyja\Database\Query\MySqlQuery::table
-   * @requires function Freyja\Database\Query\MySqlQuery::select
-   * @requires function Freyja\Database\Query\MySqlQuery::count
-   * @requires function Freyja\Database\Query\MySqlQuery::build
-   */
-  public function testSelectWithCount() {
-    $query = new MySqlQuery;
-    $query_str = $query->table('table')->select('field', 'other_field')->count(array('another_field', 56))->build();
-    $expected_str = 'SELECT field, other_field, COUNT(another_field) FROM table';
-
-    $this->assertEquals(
-      $query_str,
-      $expected_str,
-      'Failed asserting that MySqlQuery correctly build a select query with count.'
     );
   }
 

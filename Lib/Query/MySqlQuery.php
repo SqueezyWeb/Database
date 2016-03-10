@@ -61,18 +61,6 @@ class MySqlQuery extends Query implements QueryInterface {
   private $distinct = false;
 
   /**
-   * COUNT.
-   *
-   * True correspond to `COUNT(*)`. Or array containing the fields to be
-   * counted.
-   *
-   * @since 1.0.0
-   * @access private
-   * @var boolean|array
-   */
-  private $count;
-
-  /**
    * ORDERBY.
    *
    * Associative array `key => value`, where `key` is the field in which to sort
@@ -354,6 +342,25 @@ class MySqlQuery extends Query implements QueryInterface {
   }
 
   /**
+   * Set a select count.
+   *
+   * @since 1.3.0 Change behaviour.
+   * @since 1.0.0
+   * @access public
+   *
+   * @param string $field Field name.
+   * @return self
+   *
+   * @throws Freyja\Exceptions\InvalidArgumentException if argument isn't a string.
+   */
+  public function count($field) {
+    if (!is_string($field))
+      throw InvalidArgumentException::typeMismatch('field', $field, 'String');
+
+    return $this->select(sprintf('COUNT(%s)', $field));
+  }
+
+  /**
    * Set a select greatest.
    *
    * @since 1.3.0
@@ -427,29 +434,6 @@ class MySqlQuery extends Query implements QueryInterface {
 
     $this->update = $values;
     $this->type = 'update';
-
-    return $this;
-  }
-
-  /**
-   * Set COUNT.
-   *
-   * Set COUNT to all field or to some specific fields (passing an array
-   * containing strings).
-   *
-   * @since 1.0.0
-   * @access public
-   *
-   * @param array $count Optional. List of fields to which apply the COUNT
-   * selector. Default: empty array.
-   * @return self
-   */
-  public function count(array $fields = array()) {
-    if (empty($fields))
-      $this->count = true;
-    else
-      $this->count = array_filter($fields, 'is_string');
-    $this->type = 'select';
 
     return $this;
   }
@@ -1213,16 +1197,9 @@ class MySqlQuery extends Query implements QueryInterface {
       $this->distinct ? 'DISTINCT ' : ''
     );
     if (!is_array($this->select) || empty($this->select)) {
-      $part = $this->buildCount();
-      if ($part == '')
-        $query .= '*';
-      else
-        $query .= $part;
+      $query .= '*';
     } else {
       $query .= join(', ', $this->select);
-      $part = $this->buildCount();
-      if ($part != '')
-        $query .= ', '.$part;
     }
 
     // Append the `FROM` part.
@@ -1281,10 +1258,14 @@ class MySqlQuery extends Query implements QueryInterface {
   /**
    * Build COUNT query part.
    *
+   * @deprecated 1.3.0 No longer used by internal code.
+   *
    * @since 1.0.0
    * @access private
    *
    * @return string
+   *
+   * @codeCoverageIgnore
    */
   private function buildCount() {
     $part = '';
