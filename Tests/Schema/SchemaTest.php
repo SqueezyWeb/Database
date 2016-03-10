@@ -7,8 +7,9 @@
  * @since 0.1.0
  */
 
-namespace Freyja\Database\Tests;
+namespace Freyja\Database\Tests\Schema;
 
+use Freyja\Database\Tests\FixtureTestCase;
 use Freyja\Database\Schema\Schema;
 use Freyja\Database\Schema\Field;
 use Freyja\Database\Schema\Table;
@@ -36,7 +37,7 @@ class SchemaTest extends FixtureTestCase {
    */
   public static function setUpBeforeClass() {
     $filename = getcwd().'/db/schema.yml';
-    $fixture = dirname(__FILE__).'/fixtures/schema.yml';
+    $fixture = dirname(__DIR__).'/fixtures/schema.yml';
     $schema = Yaml::parse(file_get_contents($fixture));
     $yaml_string = Yaml::dump($schema);
     if (!file_exists(getcwd().'/db'))
@@ -120,7 +121,7 @@ class SchemaTest extends FixtureTestCase {
     $db->execute($query);
 
     $query_table = $this->getConnection()->createQueryTable('products', 'SELECT * FROM products');
-    $expected_table = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(dirname(__FILE__).'/fixtures/products.yml');
+    $expected_table = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(dirname(__DIR__).'/fixtures/products.yml');
 
     $this->assertTablesEqual($query_table, $expected_table->getTable('products'));
 

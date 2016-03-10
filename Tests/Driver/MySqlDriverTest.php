@@ -7,7 +7,7 @@
  * @since 0.1.0
  */
 
-namespace Freyja\Database\Tests;
+namespace Freyja\Database\Tests\Driver;
 
 use Freyja\Database\Tests\FixtureTestCase;
 use Freyja\Database\Driver\MySqlDriver;

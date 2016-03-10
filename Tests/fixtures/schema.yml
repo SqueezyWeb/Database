@@ -31,3 +31,16 @@ test:
       charset: "utf8"
       collation: "utf8_unicode_ci"
       engine: "InnoDB"
+    migrations:
+      fields:
+        batch:
+          type: "VARCHAR(255)"
+          NOT NULL: true
+        migration:
+          type: "VARCHAR(255)"
+          NOT NULL: true
+      primary: []
+      foreign: []
+      charset: "utf8"
+      collation: "utf8_unicode_ci"
+      engine: "InnoDB"

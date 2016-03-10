@@ -1,0 +1,7 @@
+migrations:
+  -
+    batch: "1457091317"
+    migration: "1457091317_migrationTest"
+  -
+    batch: "1457091829"
+    migration: "1457091829_migrationCreateTest"
