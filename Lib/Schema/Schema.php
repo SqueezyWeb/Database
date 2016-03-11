@@ -22,7 +22,7 @@ use Freyja\Exceptions\ExceptionInterface;
  * @package Freyja\Database\Schema
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class Schema {
   /**
@@ -69,6 +69,7 @@ class Schema {
    * The Database argument MUST be connected before passing it to the
    * constructor.
    *
+   * @since 1.1.0 Call Schema::loadSchema() method instead of loading schema itself.
    * @since 1.0.0
    * @access public
    *
@@ -76,22 +77,7 @@ class Schema {
    */
   public function __construct(Database $database) {
     $this->database = $database;
-
-    $this->filename = getcwd().'/db/schema.yml';
-    if (file_exists($this->filename)) {
-      // Put file content into an array.
-      $schema = Yaml::parse(file_get_contents($this->filename));
-      // Check if $database exists in the array and put its schema into the
-      // object property.
-      $this->schema = isset($schema[$database->getName()]) ? $schema[$database->getName()] : array();
-      if (!isset($this->schema['tables']))
-        $this->schema['tables'] = array();
-      // At this point $schema has this structure:
-      // `array('tables'=>array())`
-      // and the internal array may or may not contain some tables.
-      // $schema is the schema of $database, therefore it must be dumped by Yaml
-      // in this way: `array($database->getName() => $schema)`.
-    }
+    $this->loadSchema();
   }
 
   /**
@@ -106,22 +92,21 @@ class Schema {
    * Freyja\Database\Database::execute() if the query fails.
    */
   public function create(Table $table) {
-    if ($this->hasTable($table)) {
-      // Table already exists.
-    } else {
-      // Table doesn't exists, create it.
-      try {
-        $this->database->execute($table);
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-      // Query ok, update schema property.
-      $info = $table->getTable();
-      $this->schema['tables'] = array_merge($this->schema['tables'], $info);
+    if ($this->hasTable($table))
+      return;  // Table already exists.
 
-      // Write new schema in yaml file.
-      $this->updateSchema();
+    // Table doesn't exists, create it.
+    try {
+      $this->database->execute($table);
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
+    // Query ok, update schema property.
+    $info = $table->getTable();
+    $this->schema['tables'] = array_merge($this->schema['tables'], $info);
+
+    // Write new schema in yaml file.
+    $this->updateSchema();
   }
 
   /**
@@ -144,19 +129,18 @@ class Schema {
     if (is_string($table))
       $table = new Table($table);
 
-    if (!$this->hasTable($table)) {
-    } else {
-      // Table exists, drop it.
-      try {
-        $this->database->execute($table->drop());
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-      // Query ok, update schema property.
-      unset($this->schema['tables'][$table->getName()]);
-      // Write new schema in yaml file.
-      $this->updateSchema();
+    if (!$this->hasTable($table))
+      return;  // Table doesn't exists.
+    // Table exists, drop it.
+    try {
+      $this->database->execute($table->drop());
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
+    // Query ok, update schema property.
+    unset($this->schema['tables'][$table->getName()]);
+    // Write new schema in yaml file.
+    $this->updateSchema();
   }
 
   /**
@@ -173,38 +157,38 @@ class Schema {
    * Freyja\Database\Database::execute() if the query fails.
    */
   public function alter(Table $table) {
-    if (!$this->hasTable($table)) {
-    } else {
-      try {
-        // Table exists, alter it.
-        $this->database->execute($table);
-        // Query ok (if no exception was raised), update schema property.
-        $alteration = $table->getAlteration();
-      } catch (ExceptionInterface $e) {
-        throw $e;
-      }
-      foreach ($alteration as $type => $fields) {
-        switch ($type) {
-          case 'ADD':
-            $this->schema['tables'][$table->getName()]['fields'] = array_merge(
-              $this->schema['tables'][$table->getName()]['fields'],
-              $fields
-            );
-            break;
-          case 'DROP COLUMN':
-            foreach (array_keys($fields) as $name)
-              unset($this->schema['tables'][$table->getName()]['fields'][$name]);
-            break;
-        }
-      }
-      // Write new schema in yaml file.
-      $this->updateSchema();
+    if (!$this->hasTable($table))
+      return;  // Table doesn't exists.
+    try {
+      // Table exists, alter it.
+      $this->database->execute($table);
+      // Query ok (if no exception was raised), update schema property.
+      $alteration = $table->getAlteration();
+    } catch (ExceptionInterface $e) {
+      throw $e;
     }
+    foreach ($alteration as $type => $fields) {
+      switch ($type) {
+        case 'ADD':
+          $this->schema['tables'][$table->getName()]['fields'] = array_merge(
+            $this->schema['tables'][$table->getName()]['fields'],
+            $fields
+          );
+          break;
+        case 'DROP COLUMN':
+          foreach (array_keys($fields) as $name)
+            unset($this->schema['tables'][$table->getName()]['fields'][$name]);
+          break;
+      }
+    }
+    // Write new schema in yaml file.
+    $this->updateSchema();
   }
 
   /**
    * Check table existence.
    *
+   * @since 1.1.0 Reload schema from file before checking for table existence.
    * @since 1.0.0
    * @access public
    *
@@ -218,9 +202,38 @@ class Schema {
     if (!is_string($table) && !is_a($table, 'Freyja\Database\Schema\Table'))
       throw InvalidArgumentException::typeMismatch('table', $table, 'String or Freyja\Database\Schema\Table');
 
+    // Reload schema from file before check for table existence.
+    $this->loadSchema();
+
     if (!is_string($table))
       $table = $table->getName();
     return isset($this->schema['tables'][$table]);
+  }
+
+  /**
+   * Load schema
+   *
+   * @since 1.1.0
+   * @access private
+   */
+  private function loadSchema() {
+    $this->filename = getcwd().'/db/schema.yml';
+
+    if (!file_exists($this->filename))
+      return;
+
+    // Put file content into an array.
+    $schema = Yaml::parse(file_get_contents($this->filename));
+    // Check if $database exists in the array and put its schema into the
+    // object property.
+    $this->schema = isset($schema[$this->database->getName()]) ? $schema[$this->database->getName()] : array();
+    if (!isset($this->schema['tables']))
+      $this->schema['tables'] = array();
+    // At this point $schema has this structure:
+    // `array('tables'=>array())`
+    // and the internal array may or may not contain some tables.
+    // $schema is the schema of $database, therefore it must be dumped by Yaml
+    // in this way: `array($database->getName() => $schema)`.
   }
 
   /**
@@ -230,8 +243,6 @@ class Schema {
    *
    * @since 1.0.0
    * @access private
-   *
-   * @param
    */
   private function updateSchema() {
     // Retrieve current schema.
