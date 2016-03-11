@@ -226,7 +226,7 @@ class Schema {
     $schema = Yaml::parse(file_get_contents($this->filename));
     // Check if $database exists in the array and put its schema into the
     // object property.
-    $this->schema = isset($schema[$database->getName()]) ? $schema[$database->getName()] : array();
+    $this->schema = isset($schema[$this->database->getName()]) ? $schema[$this->database->getName()] : array();
     if (!isset($this->schema['tables']))
       $this->schema['tables'] = array();
     // At this point $schema has this structure:
