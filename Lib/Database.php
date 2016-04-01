@@ -19,8 +19,9 @@ use Freyja\Exceptions\ExceptionInterface;
  *
  * @package Freyja\Database
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @since 0.3.0 Added $object parameter to execute().
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class Database {
   /**
@@ -155,19 +156,22 @@ class Database {
    *
    * Execute the specified query.
    *
+   * @since 1.1.0 Added $object parameter.
    * @since 1.0.0
    * @access public
    *
    * @param Freyja\Database\Query\Query $query Query to execute.
+   * @param string|bool $object Optional. If set, fetches results as the specified
+   * object type (string) or StdClass (true). Default false.
    * @return self
    *
    * @throws Freyja\Exceptions\RuntimeException if it's raised by
    * Freyja\Database\Driver::execute().
    */
-  public function execute(Query $query) {
+  public function execute(Query $query, $object = false) {
     if (!$query->hasResult()) {
       try {
-        $result = $this->driver->execute($query);
+        $result = $this->driver->execute($query, $object);
       } catch (Exception $e) {
         throw $e;
       }

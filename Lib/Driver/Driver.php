@@ -17,8 +17,9 @@ use Freyja\Database\Query\Query;
  *
  * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @since 1.1.0 Added parameter $object to execute().
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 interface Driver {
   /**
@@ -51,13 +52,17 @@ interface Driver {
   /**
    * Execute a query.
    *
+   * @since 1.1.0 Added parameter $object.
    * @since 1.0.0
    * @access public
    *
    * @param Freyja\Database\Query\Query Query that will be executed.
+   * @param string|bool $object Optional. If set and string, fetches results
+   * as the specified object. If true, fetches results as StdClass objects.
+   * If false fetches results as arrays. Default false.
    * @return mixed Query result.
    *
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
-  public function execute(Query $query);
+  public function execute(Query $query, $object = false);
 }
