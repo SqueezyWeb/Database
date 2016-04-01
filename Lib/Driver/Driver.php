@@ -17,6 +17,7 @@ use Freyja\Database\Query\Query;
  *
  * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @author Mattia Migliorini <mattia@squeezyweb.com>
  * @since 1.1.0 Added parameter $object to execute().
  * @since 0.1.0
  * @version 1.1.0

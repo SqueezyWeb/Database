@@ -19,8 +19,9 @@ use ReflectionProperty;
  *
  * @package Freyja\Database\Tests
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @author Mattia Migliorini <mattia@squeezyweb.com>
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class MySqlDriverTest extends FixtureTestCase {
   /**
@@ -103,6 +104,66 @@ class MySqlDriverTest extends FixtureTestCase {
       $result[0]['surname'],
       'Caio',
       'Failed asserting that MySqlDriver::execute correctly execute the specified query.'
+    );
+  }
+
+  /**
+   * Test execute() passing $object.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::execute
+   */
+  public function testExecuteObject() {
+    // Load data.
+    $ds = $this->getDataSet(array('customers'));
+    $this->loadDataSet($ds);
+
+    $query = new MySqlQuery;
+    $query->table('customers')->select(array('name', 'surname'))->where('customer_id', 1);
+
+    $driver = new MySqlDriver;
+    $result = $driver->connect('localhost', 'test', 'travis', '')->execute($query, true);
+
+    $expected = new \StdClass;
+    $expected->name = 'Tizio';
+    $expected->surname = 'Caio';
+
+    $this->assertEquals(
+      $result[0],
+      $expected,
+      'execute() returns StdClass objects if $object parameter is set to true'
+    );
+  }
+
+  /**
+   * Test execute() passing a specific class name as $object.
+   *
+   * @since 1.1.0
+   * @access public
+   *
+   * @requires function Freyja\Database\Driver\MySqlDriver::execute
+   */
+  public function testExecuteObjectCustomer() {
+    include(dirname(__FILE__).'/fixtures/Customer.php');
+    
+    // Load data.
+    $ds = $this->getDataSet(array('customers'));
+    $this->loadDataSet($ds);
+
+    $query = new MySqlQuery;
+    $query->table('customers')->select(array('name', 'surname'))->where('customer_id', 1);
+
+    $driver = new MySqlDriver;
+    $result = $driver->connect('localhost', 'test', 'travis', '')->execute($query, 'Freyja\Database\Tests\Customer');
+
+    $expected = new Customer(null, 'Tizio', 'Caio');
+
+    $this->assertEquals(
+      $expected,
+      $result[0],
+      'execute() returns Customer object if $object parameter is set to Customer'
     );
   }
 

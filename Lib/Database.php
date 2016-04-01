@@ -19,6 +19,7 @@ use Freyja\Exceptions\ExceptionInterface;
  *
  * @package Freyja\Database
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @author Mattia Migliorini <mattia@squeezyweb.com>
  * @since 0.3.0 Added $object parameter to execute().
  * @since 0.1.0
  * @version 1.1.0
