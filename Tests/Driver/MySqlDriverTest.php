@@ -146,8 +146,8 @@ class MySqlDriverTest extends FixtureTestCase {
    * @requires function Freyja\Database\Driver\MySqlDriver::execute
    */
   public function testExecuteObjectCustomer() {
-    include(dirname(__FILE__).'/fixtures/Customer.php');
-    
+    include(dirname(__DIR__).'/fixtures/Customer.php');
+
     // Load data.
     $ds = $this->getDataSet(array('customers'));
     $this->loadDataSet($ds);
