@@ -20,8 +20,10 @@ use mysqli;
  *
  * @package Freyja\Database\Driver
  * @author Gianluca Merlo <gianluca@squeezyweb.com>
+ * @author Mattia Migliorini <mattia@squeezyweb.com>
+ * @since 1.1.0 Added parameter $object to execute().
  * @since 0.1.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 class MySqlDriver implements Driver {
   /**
@@ -59,7 +61,7 @@ class MySqlDriver implements Driver {
     // Handle connection errors.
     if ($connection->connect_error)
       throw new RuntimeException(sprintf(
-        'Error while connecting to MySql Server ($d): %s',
+        'Error while connecting to MySql Server (%d): %s',
         $connection->connect_errno,
         $connection->connect_error
       ));
@@ -85,15 +87,19 @@ class MySqlDriver implements Driver {
   /**
    * Execute a query.
    *
+   * @since 1.1.0 Added parameter $object
    * @since 1.0.0
    * @access public
    *
    * @param Freyja\Database\Query\Query Query that will be executed.
+   * @param string|bool $object Optional. If set and string, fetches results
+   * as the specified object. If true, fetches results as StdClass objects.
+   * If false fetches results as arrays. Default false.
    * @return mixed Query result.
    *
    * @throws Freyja\Exceptions\RuntimeException if query have some errors.
    */
-  public function execute(Query $query) {
+  public function execute(Query $query, $object = false) {
     $query_str = (string) $query;
 
     if (method_exists($query, 'getDelimiter')) {
@@ -114,11 +120,20 @@ class MySqlDriver implements Driver {
 
     // Query successful.
     $results = array();
-    if (!is_bool($result))
-      while ($row = $result->fetch_assoc())
-        $results[] = $row;
-    else
+    if (!is_bool($result)) {
+      if (!$object) {
+        while ($row = $result->fetch_assoc())
+          $results[] = $row;
+      } else if ($object === true) {
+        while ($row = $result->fetch_object())
+          $results[] = $row;
+      } else {
+        while ($row = $result->fetch_object($object))
+          $results[] = $row;
+      }
+    } else {
       $results = $result;
+    }
     return $results;
   }
 
