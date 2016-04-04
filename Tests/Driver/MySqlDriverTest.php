@@ -10,6 +10,7 @@
 namespace Freyja\Database\Tests\Driver;
 
 use Freyja\Database\Tests\FixtureTestCase;
+use Freyja\Database\Tests\Customer;
 use Freyja\Database\Driver\MySqlDriver;
 use Freyja\Database\Query\MySqlQuery;
 use ReflectionProperty;
